@@ -4,14 +4,21 @@ Backend API de DIREGO SCM.
 
 ## Estado
 
-Repositorio creado para HU-25 del Sprint 3. La arquitectura aprobada define un monolito modular con NestJS y Fastify, API REST bajo `/api/v1`, PostgreSQL mediante Drizzle y despliegue controlado en Dokploy.
+Repositorio en desarrollo para HU-25 del Sprint 3. La arquitectura aprobada define un monolito modular con NestJS y Fastify, API REST bajo `/api/v1`, PostgreSQL mediante Drizzle y despliegue controlado en Dokploy.
 
-Este commit es fundacional. Todavia no incluye:
+El bootstrap inicial ya incluye:
 
-- codigo de NestJS
-- dependencias de Node.js
-- conexion funcional a PostgreSQL
-- autenticacion o sesiones
+- NestJS sobre Fastify
+- TypeScript y pnpm
+- configuracion validada con Zod
+- OpenAPI bajo `/api/v1/docs`
+- endpoints de liveness y readiness
+- prueba unitaria base con Vitest
+
+Todavia no incluye:
+
+- conexion funcional a PostgreSQL; corresponde a HU-26
+- autenticacion o sesiones; corresponden a HU-27 y HU-28
 - endpoints de importacion
 - procesamiento asincrono
 
@@ -42,4 +49,3 @@ El siguiente bloque implementara el bootstrap tecnico del repositorio:
 - `scm-docs`: documentacion, backlog y decisiones.
 - `scm-database`: schema Drizzle, migraciones y seeds.
 - `scm-api`: backend y API de negocio.
-
