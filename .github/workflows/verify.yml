@@ -1,0 +1,51 @@
+name: Verificar API
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  packages: read
+
+jobs:
+  verify:
+    name: Tipos, lint, pruebas y build
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Descargar repositorio
+        uses: actions/checkout@v4
+
+      - name: Instalar pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 11.21.0
+
+      - name: Configurar Node.js y GitHub Packages
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          registry-url: https://npm.pkg.github.com
+          scope: "@jagr-dirego"
+          cache: pnpm
+
+      - name: Instalar dependencias
+        run: pnpm install --frozen-lockfile
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Validar tipos
+        run: pnpm exec tsc --noEmit
+
+      - name: Ejecutar lint
+        run: pnpm lint
+
+      - name: Ejecutar pruebas
+        run: pnpm test
+
+      - name: Compilar API
+        run: pnpm build

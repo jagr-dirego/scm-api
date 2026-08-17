@@ -1,3 +1,5 @@
+minimumReleaseAgeExclude:
+  - '@jagr-dirego/scm-database'
 onlyBuiltDependencies:
   - esbuild
   - unrs-resolver
