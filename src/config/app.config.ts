@@ -1,33 +1,24 @@
-import { z } from 'zod';
+import { parseEnvironment } from './environment.schema';
 
-const environmentSchema = z.object({
-  NODE_ENV: z
-    .enum(['development', 'test', 'production'])
-    .default('development'),
-  PORT: z.coerce.number().int().min(1).max(65_535).default(3000),
-  LOG_LEVEL: z
-    .enum(['fatal', 'error', 'warn', 'info', 'debug', 'trace'])
-    .default('info'),
-  CORS_ORIGINS: z.string().default('http://localhost:5173'),
-  OPENAPI_ENABLED: z.coerce.boolean().default(true),
-  DATABASE_URL: z.string().url().startsWith('postgresql://'),
-});
-
-const parsedEnvironment = environmentSchema.safeParse(process.env);
-
-if (!parsedEnvironment.success) {
-  throw new Error(
-    `Invalid application configuration: ${parsedEnvironment.error.message}`,
-  );
-}
+const environment = parseEnvironment(process.env);
 
 export const appConfig = {
-  nodeEnv: parsedEnvironment.data.NODE_ENV,
-  port: parsedEnvironment.data.PORT,
-  logLevel: parsedEnvironment.data.LOG_LEVEL,
-  openApiEnabled: parsedEnvironment.data.OPENAPI_ENABLED,
-  databaseUrl: parsedEnvironment.data.DATABASE_URL,
-  corsOrigins: parsedEnvironment.data.CORS_ORIGINS.split(',')
+  nodeEnv: environment.NODE_ENV,
+  port: environment.PORT,
+  logLevel: environment.LOG_LEVEL,
+  openApiEnabled: environment.OPENAPI_ENABLED,
+  databaseUrl: environment.DATABASE_URL,
+  argon2: {
+    memoryCost: environment.ARGON2_MEMORY_COST,
+    timeCost: environment.ARGON2_TIME_COST,
+    parallelism: environment.ARGON2_PARALLELISM,
+    hashLength: environment.ARGON2_HASH_LENGTH,
+  },
+  auth: {
+    maxFailedAttempts: environment.AUTH_MAX_FAILED_ATTEMPTS,
+    lockoutMinutes: environment.AUTH_LOCKOUT_MINUTES,
+  },
+  corsOrigins: environment.CORS_ORIGINS.split(',')
     .map((origin) => origin.trim())
     .filter(Boolean),
 };
