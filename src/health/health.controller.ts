@@ -1,4 +1,4 @@
-import { Controller, Get, HttpCode, HttpStatus } from '@nestjs/common';
+import { Controller, Get } from '@nestjs/common';
 import { ApiOperation, ApiTags } from '@nestjs/swagger';
 import { HealthService } from './health.service';
 
@@ -14,11 +14,10 @@ export class HealthController {
   }
 
   @Get('ready')
-  @HttpCode(HttpStatus.SERVICE_UNAVAILABLE)
   @ApiOperation({
     summary: 'Confirma que la API esta lista para recibir trafico',
   })
-  ready() {
+  async ready() {
     return this.healthService.ready();
   }
 }

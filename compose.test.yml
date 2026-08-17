@@ -1,0 +1,24 @@
+services:
+  postgres-test:
+    image: postgres:16.4
+    container_name: scm-postgres-test
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: scm_test
+      POSTGRES_USER: scm_test
+      POSTGRES_PASSWORD: scm_test_password
+      PGDATA: /var/lib/postgresql/data/pgdata
+    ports:
+      - "127.0.0.1:15433:5432"
+    volumes:
+      - scm_postgres_test_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U scm_test -d scm_test"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
+
+volumes:
+  scm_postgres_test_data:
+    name: scm_postgres_test_data

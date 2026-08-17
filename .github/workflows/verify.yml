@@ -16,6 +16,25 @@ jobs:
     name: Tipos, lint, pruebas y build
     runs-on: ubuntu-latest
 
+    services:
+      postgres:
+        image: postgres:16.4
+        env:
+          POSTGRES_USER: scm_test
+          POSTGRES_PASSWORD: scm_test_password
+          POSTGRES_DB: scm_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U scm_test -d scm_test"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+
+    env:
+      DATABASE_URL: postgresql://scm_test:scm_test_password@127.0.0.1:5432/scm_test
+      TEST_DATABASE_URL: postgresql://scm_test:scm_test_password@127.0.0.1:5432/scm_test
+
     steps:
       - name: Descargar repositorio
         uses: actions/checkout@v4
@@ -46,6 +65,9 @@ jobs:
 
       - name: Ejecutar pruebas
         run: pnpm test
+
+      - name: Ejecutar pruebas de integracion PostgreSQL
+        run: pnpm test:integration
 
       - name: Compilar API
         run: pnpm build

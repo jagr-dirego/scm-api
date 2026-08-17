@@ -1,7 +1,10 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, ServiceUnavailableException } from '@nestjs/common';
+import { DatabaseService } from '../database/database.service';
 
 @Injectable()
 export class HealthService {
+  constructor(private readonly databaseService: DatabaseService) {}
+
   live() {
     return {
       status: 'ok',
@@ -9,13 +12,21 @@ export class HealthService {
     };
   }
 
-  ready() {
-    return {
-      status: 'ok',
-      service: 'scm-api',
-      checks: {
-        database: 'not-configured-yet',
-      },
-    };
+  async ready() {
+    try {
+      await this.databaseService.checkConnection();
+
+      return {
+        status: 'ok',
+        service: 'scm-api',
+        checks: { database: 'available' },
+      };
+    } catch {
+      throw new ServiceUnavailableException({
+        status: 'unavailable',
+        service: 'scm-api',
+        checks: { database: 'unavailable' },
+      });
+    }
   }
 }

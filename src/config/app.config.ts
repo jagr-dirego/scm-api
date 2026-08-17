@@ -10,6 +10,7 @@ const environmentSchema = z.object({
     .default('info'),
   CORS_ORIGINS: z.string().default('http://localhost:5173'),
   OPENAPI_ENABLED: z.coerce.boolean().default(true),
+  DATABASE_URL: z.string().url().startsWith('postgresql://'),
 });
 
 const parsedEnvironment = environmentSchema.safeParse(process.env);
@@ -25,6 +26,7 @@ export const appConfig = {
   port: parsedEnvironment.data.PORT,
   logLevel: parsedEnvironment.data.LOG_LEVEL,
   openApiEnabled: parsedEnvironment.data.OPENAPI_ENABLED,
+  databaseUrl: parsedEnvironment.data.DATABASE_URL,
   corsOrigins: parsedEnvironment.data.CORS_ORIGINS.split(',')
     .map((origin) => origin.trim())
     .filter(Boolean),
