@@ -8,6 +8,8 @@ import { AuthRepository } from './auth.repository';
 import { AuthService } from './auth.service';
 import { PASSWORD_HASH_OPTIONS } from './password.constants';
 import { PasswordService } from './password.service';
+import { SessionRepository } from './session.repository';
+import { SessionService } from './session.service';
 import { TOKEN_OPTIONS } from './token.constants';
 import { TokenService } from './token.service';
 
@@ -24,8 +26,10 @@ import { TokenService } from './token.service';
     AuthRepository,
     AuthService,
     PasswordService,
+    SessionRepository,
+    SessionService,
     TokenService,
   ],
-  exports: [AuthService, PasswordService, TokenService],
+  exports: [AuthService, PasswordService, SessionService, TokenService],
 })
 export class AuthModule {}

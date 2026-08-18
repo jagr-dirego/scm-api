@@ -19,10 +19,12 @@
     "test:integration": "vitest run test/database.integration.spec.ts",
     "test:integration:bootstrap": "vitest run test/bootstrap-admin.integration.spec.ts",
     "test:integration:auth": "vitest run test/auth-login.integration.spec.ts",
+    "test:integration:sessions": "vitest run test/session-rotation.integration.spec.ts",
     "db:test:up": "docker compose -f compose.test.yml up -d --wait",
     "db:test:down": "docker compose -f compose.test.yml down",
     "db:test:logs": "docker compose -f compose.test.yml logs postgres-test",
     "security:argon2:benchmark": "tsx scripts/benchmark-argon2.ts",
+    "security:jwt:generate-local": "tsx scripts/generate-jwt-keys.ts",
     "test:watch": "vitest",
     "test:cov": "vitest run --coverage",
     "test:e2e": "vitest run test/**/*.e2e-spec.ts"

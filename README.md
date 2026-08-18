@@ -66,6 +66,16 @@ Este endpoint todavia no emite JWT, refresh token ni crea registros en `sessions
 
 La base criptografica de HU-28 utiliza `jose`, claves RSA 3072, `kid`, issuer, audience y access tokens de 10 minutos. Las claves se reciben como Base64 mediante secretos de entorno; no existen claves por defecto ni material criptografico versionado.
 
+Para generar o rotar exclusivamente las claves del entorno local:
+
+```powershell
+pnpm.cmd security:jwt:generate-local
+```
+
+El comando actualiza `.env` sin imprimir claves, se niega a operar si detecta `NODE_ENV=production` y no crea respaldos con secretos.
+
+El nucleo de sesiones ya soporta creacion, rotacion de refresh token, expiracion, deteccion de reuso y revocacion compensatoria. Todavia no esta conectado al controlador de login ni emite cookies HTTP.
+
 ## Reglas de repositorio
 
 - `main` es la rama protegida de integracion.
