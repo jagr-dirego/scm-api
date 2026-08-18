@@ -76,6 +76,12 @@ const cleanup = async (): Promise<void> => {
        )`,
     );
     await pool.query("DELETE FROM users WHERE email LIKE '%@hu29-authz.test'");
+    await pool.query(
+      `DELETE FROM branches WHERE organization_id IN (
+         SELECT id FROM organizations WHERE code LIKE $1
+       )`,
+      [`${prefix}%`],
+    );
     await pool.query('DELETE FROM organizations WHERE code LIKE $1', [
       `${prefix}%`,
     ]);
@@ -282,5 +288,93 @@ describe.sequential('ImportAuthorizationService PostgreSQL integration', () => {
       allowed: true,
       profile: { code: 'stock_general' },
     });
+  });
+
+  it('does not use role grants from another active organization', async () => {
+    const fixture = await createFixture('TENANT_A');
+    const otherOrganization = await pool.query<{ id: string }>(
+      `INSERT INTO organizations (code, name, slug)
+       VALUES ($1, $2, $3) RETURNING id`,
+      [`${prefix}TENANT_B`, 'Authorization tenant B', 'hu29-authz-tenant-b'],
+    );
+    await pool.query(
+      `INSERT INTO user_memberships (organization_id, user_id)
+       VALUES ($1, $2)`,
+      [otherOrganization.rows[0].id, fixture.userId],
+    );
+    await assignRole(
+      { ...fixture, organizationId: otherOrganization.rows[0].id },
+      'TENANT_B',
+      { action: true, type: true, branch: true },
+    );
+
+    await expect(service.authorize(fixture.input)).resolves.toMatchObject({
+      allowed: false,
+      profile: { code: 'stock_general' },
+    });
+    await expect(
+      permissionService.isAllowed(
+        {
+          identity: fixture.input.identity,
+          permissionCodes: ['imports.upload'],
+        },
+        { permissions: ['imports.upload'], mode: 'all' },
+      ),
+    ).resolves.toBe(false);
+  });
+
+  it('rejects a branch-scoped grant when the branch belongs to another tenant', async () => {
+    const fixture = await createFixture('BRANCH_A');
+    const otherOrganization = await pool.query<{ id: string }>(
+      `INSERT INTO organizations (code, name, slug)
+       VALUES ($1, $2, $3) RETURNING id`,
+      [`${prefix}BRANCH_B`, 'Authorization branch B', 'hu29-authz-branch-b'],
+    );
+    const foreignBranch = await pool.query<{ id: string }>(
+      `INSERT INTO branches (organization_id, code, name, branch_type)
+       VALUES ($1, $2, $3, $4) RETURNING id`,
+      [
+        otherOrganization.rows[0].id,
+        `${prefix}FOREIGN`,
+        'Foreign branch',
+        'CEDI',
+      ],
+    );
+    const role = await pool.query<{ id: string }>(
+      `INSERT INTO roles (organization_id, code, name)
+       VALUES ($1, $2, $3) RETURNING id`,
+      [fixture.organizationId, `${prefix}BRANCH_SCOPE`, 'Branch role'],
+    );
+    await pool.query(
+      `INSERT INTO role_permissions (role_id, permission_id)
+       VALUES ($1, $2)`,
+      [role.rows[0].id, fixture.permissionId],
+    );
+    await pool.query(
+      `INSERT INTO user_role_assignments
+         (user_id, organization_id, role_id, branch_id, scope)
+       VALUES ($1, $2, $3, $4, 'branch')`,
+      [
+        fixture.userId,
+        fixture.organizationId,
+        role.rows[0].id,
+        foreignBranch.rows[0].id,
+      ],
+    );
+
+    await expect(
+      permissionService.isAllowed(
+        {
+          identity: fixture.input.identity,
+          permissionCodes: ['imports.upload'],
+          branchId: foreignBranch.rows[0].id,
+        },
+        {
+          permissions: ['imports.upload'],
+          mode: 'all',
+          branchParam: 'branchId',
+        },
+      ),
+    ).resolves.toBe(false);
   });
 });
