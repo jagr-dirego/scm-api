@@ -21,6 +21,7 @@
     "test:integration:auth": "vitest run test/auth-login.integration.spec.ts",
     "test:integration:sessions": "vitest run test/session-rotation.integration.spec.ts",
     "test:integration:authorization": "vitest run test/import-authorization.integration.spec.ts",
+    "test:integration:audit": "vitest run test/audit.integration.spec.ts",
     "db:test:up": "docker compose -f compose.test.yml up -d --wait",
     "db:test:down": "docker compose -f compose.test.yml down",
     "db:test:logs": "docker compose -f compose.test.yml logs postgres-test",
