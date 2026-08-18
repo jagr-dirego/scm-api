@@ -16,10 +16,11 @@ El bootstrap inicial ya incluye:
 - pool PostgreSQL con cierre controlado y readiness real
 - pruebas unitarias y de integracion con Vitest
 - Argon2id, `PasswordService` y nucleo transaccional del bootstrap inicial
+- login con email y password, bloqueo temporal y auditoria de eventos
 
 Todavia no incluye:
 
-- login y sesiones; corresponden a los siguientes bloques de HU-27 y HU-28
+- JWT, refresh tokens y sesiones; corresponden a HU-28
 - endpoints de importacion
 - procesamiento asincrono
 
@@ -55,6 +56,12 @@ pnpm.cmd bootstrap:admin
 Solicita organizacion, email, nombre y password con confirmacion oculta. Antes de escribir exige teclear `CREAR`. No acepta argumentos, redireccion de entrada, password mediante variables ni ejecucion automatica. Debe apuntar deliberadamente a la base objetivo mediante `DATABASE_URL`; las pruebas automatizadas nunca deben usar Dokploy.
 
 La segunda ejecucion se rechaza si ya existe una asignacion global activa de `SuperAdmin`. No existe opcion `--force`.
+
+## Login sin sesion
+
+`POST /api/v1/auth/login` valida email, password y, cuando aplica, `organizationCode`. Todos los fallos de identidad o estado responden `401` con el mismo contrato para evitar enumeracion de usuarios. El exito devuelve unicamente IDs de usuario, organizacion y membresia, email y nombre visible.
+
+Este endpoint todavia no emite JWT, refresh token ni crea registros en `sessions`. Esa continuidad pertenece a HU-28.
 
 ## Reglas de repositorio
 

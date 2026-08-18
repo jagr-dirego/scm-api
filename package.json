@@ -18,6 +18,7 @@
     "test": "vitest run src",
     "test:integration": "vitest run test/database.integration.spec.ts",
     "test:integration:bootstrap": "vitest run test/bootstrap-admin.integration.spec.ts",
+    "test:integration:auth": "vitest run test/auth-login.integration.spec.ts",
     "db:test:up": "docker compose -f compose.test.yml up -d --wait",
     "db:test:down": "docker compose -f compose.test.yml down",
     "db:test:logs": "docker compose -f compose.test.yml logs postgres-test",
