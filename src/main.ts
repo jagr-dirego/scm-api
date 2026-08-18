@@ -3,12 +3,17 @@ import { NestFastifyApplication } from '@nestjs/platform-fastify';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { AppModule } from './app.module';
 import { appConfig } from './config/app.config';
+import {
+  applicationLogger,
+  applicationNestLogger,
+} from './observability/application-logger';
 import { createFastifyAdapter } from './observability/fastify-adapter';
 
 async function bootstrap() {
   const app = await NestFactory.create<NestFastifyApplication>(
     AppModule,
-    createFastifyAdapter(),
+    createFastifyAdapter(applicationLogger),
+    { logger: applicationNestLogger },
   );
 
   app.setGlobalPrefix('api/v1');
