@@ -6,6 +6,7 @@ import { AuthorizationModule } from './authorization/authorization.module';
 import { BootstrapAdminModule } from './bootstrap-admin/bootstrap-admin.module';
 import { DatabaseModule } from './database/database.module';
 import { HealthModule } from './health/health.module';
+import { ObservabilityModule } from './observability/observability.module';
 
 @Module({
   imports: [
@@ -14,6 +15,7 @@ import { HealthModule } from './health/health.module';
     BootstrapAdminModule,
     DatabaseModule,
     HealthModule,
+    ObservabilityModule,
   ],
   controllers: [AppController],
   providers: [AppService],
