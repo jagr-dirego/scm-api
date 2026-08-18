@@ -35,6 +35,9 @@ importers:
       drizzle-orm:
         specifier: 1.0.0-rc.4
         version: 1.0.0-rc.4(@types/pg@8.21.0)(pg@8.23.0)(zod@3.25.76)
+      jose:
+        specifier: 6.2.9
+        version: 6.2.9
       pg:
         specifier: ^8.23.0
         version: 8.23.0
@@ -1722,6 +1725,9 @@ packages:
   jest-worker@27.5.1:
     resolution: {integrity: sha512-7vuh85V5cdDofPyxn58nrPjBktZo0u9x1g8WtjQol+jZDaE+fhN+cIvTj11GndBnMnyfrUOG1sZQxCdjKh+DKg==}
     engines: {node: '>= 10.13.0'}
+
+  jose@6.2.9:
+    resolution: {integrity: sha512-XrchZOFZUl/T3vTwRe8XK+cJrGtMF4th1ARnDfwbBXFKThGhlsxEE4Zu03AD/bjJSt/9jT/mxrOCkJWOg77aPA==}
 
   js-tokens@4.0.0:
     resolution: {integrity: sha512-RdJUflcE3cUzKiMqQgsCu06FPu9UdIJO0beYbPhHN4k6apgJtifcoCtT9bcxOpYBtpD2kCM6Sbzg4CausW/PKQ==}
@@ -4027,6 +4033,8 @@ snapshots:
       '@types/node': 24.13.3
       merge-stream: 2.0.0
       supports-color: 8.1.1
+
+  jose@6.2.9: {}
 
   js-tokens@4.0.0: {}
 

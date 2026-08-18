@@ -17,6 +17,7 @@ El bootstrap inicial ya incluye:
 - pruebas unitarias y de integracion con Vitest
 - Argon2id, `PasswordService` y nucleo transaccional del bootstrap inicial
 - login con email y password, bloqueo temporal y auditoria de eventos
+- configuracion JWT RS256 validada y `TokenService` sin emision funcional en login
 
 Todavia no incluye:
 
@@ -62,6 +63,8 @@ La segunda ejecucion se rechaza si ya existe una asignacion global activa de `Su
 `POST /api/v1/auth/login` valida email, password y, cuando aplica, `organizationCode`. Todos los fallos de identidad o estado responden `401` con el mismo contrato para evitar enumeracion de usuarios. El exito devuelve unicamente IDs de usuario, organizacion y membresia, email y nombre visible.
 
 Este endpoint todavia no emite JWT, refresh token ni crea registros en `sessions`. Esa continuidad pertenece a HU-28.
+
+La base criptografica de HU-28 utiliza `jose`, claves RSA 3072, `kid`, issuer, audience y access tokens de 10 minutos. Las claves se reciben como Base64 mediante secretos de entorno; no existen claves por defecto ni material criptografico versionado.
 
 ## Reglas de repositorio
 
