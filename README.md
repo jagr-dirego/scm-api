@@ -15,10 +15,11 @@ El bootstrap inicial ya incluye:
 - endpoints de liveness y readiness
 - pool PostgreSQL con cierre controlado y readiness real
 - pruebas unitarias y de integracion con Vitest
+- Argon2id, `PasswordService` y nucleo transaccional del bootstrap inicial
 
 Todavia no incluye:
 
-- autenticacion o sesiones; corresponden a HU-27 y HU-28
+- login y sesiones; corresponden a los siguientes bloques de HU-27 y HU-28
 - endpoints de importacion
 - procesamiento asincrono
 
@@ -42,6 +43,18 @@ pnpm.cmd db:test:down
 ```
 
 `db:test:down` conserva el volumen. La eliminacion del volumen debe ser una accion manual y deliberada.
+
+## Bootstrap administrativo inicial
+
+El comando se ejecuta exclusivamente en una terminal interactiva y no inicia el servidor HTTP:
+
+```powershell
+pnpm.cmd bootstrap:admin
+```
+
+Solicita organizacion, email, nombre y password con confirmacion oculta. Antes de escribir exige teclear `CREAR`. No acepta argumentos, redireccion de entrada, password mediante variables ni ejecucion automatica. Debe apuntar deliberadamente a la base objetivo mediante `DATABASE_URL`; las pruebas automatizadas nunca deben usar Dokploy.
+
+La segunda ejecucion se rechaza si ya existe una asignacion global activa de `SuperAdmin`. No existe opcion `--force`.
 
 ## Reglas de repositorio
 

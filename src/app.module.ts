@@ -2,11 +2,12 @@ import { Module } from '@nestjs/common';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { AuthModule } from './auth/auth.module';
+import { BootstrapAdminModule } from './bootstrap-admin/bootstrap-admin.module';
 import { DatabaseModule } from './database/database.module';
 import { HealthModule } from './health/health.module';
 
 @Module({
-  imports: [AuthModule, DatabaseModule, HealthModule],
+  imports: [AuthModule, BootstrapAdminModule, DatabaseModule, HealthModule],
   controllers: [AppController],
   providers: [AppService],
 })
