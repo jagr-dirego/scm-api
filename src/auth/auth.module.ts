@@ -38,6 +38,12 @@ import { TokenService } from './token.service';
     SessionService,
     TokenService,
   ],
-  exports: [AuthService, PasswordService, SessionService, TokenService],
+  exports: [
+    AccessSessionGuard,
+    AuthService,
+    PasswordService,
+    SessionService,
+    TokenService,
+  ],
 })
 export class AuthModule {}

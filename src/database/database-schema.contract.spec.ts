@@ -1,6 +1,9 @@
 import {
   products,
   requiredPostgresExtensions,
+  userImportBranchOverrides,
+  userImportTypeOverrides,
+  userPermissionOverrides,
 } from '@jagr-dirego/scm-database/schema';
 import { describe, expect, it } from 'vitest';
 
@@ -15,6 +18,9 @@ const requiredProductFields = [
 describe('@jagr-dirego/scm-database', () => {
   it('exposes the approved schema contract without creating a client', () => {
     expect(products).toBeDefined();
+    expect(userPermissionOverrides).toBeDefined();
+    expect(userImportTypeOverrides).toBeDefined();
+    expect(userImportBranchOverrides).toBeDefined();
     expect(requiredProductFields).toEqual([
       'id',
       'organizationId',
