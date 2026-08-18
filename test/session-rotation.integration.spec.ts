@@ -7,6 +7,7 @@ import { SessionRepository } from '../src/auth/session.repository';
 import { SessionService } from '../src/auth/session.service';
 import type { TokenOptions } from '../src/auth/token.constants';
 import type { TokenService } from '../src/auth/token.service';
+import type { VerifiedAccessToken } from '../src/auth/token.service';
 
 const databaseUrl = process.env.TEST_DATABASE_URL;
 if (!databaseUrl) {
@@ -137,6 +138,18 @@ const createService = (
     tokenService,
   };
 };
+
+const createActor = (
+  fixture: Fixture,
+  sessionId: string,
+): VerifiedAccessToken => ({
+  userId: fixture.identity.userId,
+  organizationId: fixture.identity.organizationId,
+  sessionId,
+  tokenId: '10000000-0000-4000-8000-000000000001',
+  issuedAt: 1,
+  expiresAt: 2,
+});
 
 describe.sequential('SessionService PostgreSQL integration', () => {
   beforeEach(cleanup);
@@ -310,5 +323,82 @@ describe.sequential('SessionService PostgreSQL integration', () => {
       [created.sessionId],
     );
     expect(session.rows[0]?.revoked_reason).toBe('refresh_token_reuse');
+  });
+
+  it('validates access against the complete active PostgreSQL context', async () => {
+    const fixture = await createFixture('ACCESS');
+    const { service } = createService();
+    const created = await service.createSession(fixture.identity, context);
+    const actor = createActor(fixture, created.sessionId);
+
+    await expect(repository.isAccessSessionActive(actor)).resolves.toBe(true);
+    await pool.query(
+      `UPDATE user_memberships SET status = 'inactive'
+       WHERE id = $1`,
+      [fixture.identity.membershipId],
+    );
+    await expect(repository.isAccessSessionActive(actor)).resolves.toBe(false);
+  });
+
+  it('lists and revokes only sessions owned in the authenticated organization', async () => {
+    const owner = await createFixture('OWNER');
+    const foreign = await createFixture('FOREIGN');
+    const ownerService = createService([
+      'd'.repeat(43),
+      'e'.repeat(43),
+    ]).service;
+    const foreignService = createService(['f'.repeat(43)]).service;
+    const current = await ownerService.createSession(owner.identity, context);
+    const second = await ownerService.createSession(owner.identity, context);
+    const foreignSession = await foreignService.createSession(
+      foreign.identity,
+      context,
+    );
+    const actor = createActor(owner, current.sessionId);
+
+    await expect(
+      repository.listActive(actor.userId, actor.organizationId),
+    ).resolves.toHaveLength(2);
+    await repository.revokeOwned(actor, foreignSession.sessionId, context);
+    await expect(
+      repository.isAccessSessionActive(
+        createActor(foreign, foreignSession.sessionId),
+      ),
+    ).resolves.toBe(true);
+
+    await repository.revokeOwned(actor, second.sessionId, context);
+    await expect(repository.isAccessSessionActive(actor)).resolves.toBe(true);
+    await expect(
+      repository.isAccessSessionActive(createActor(owner, second.sessionId)),
+    ).resolves.toBe(false);
+  });
+
+  it('revokes all sessions only for the authenticated organization', async () => {
+    const owner = await createFixture('ALL');
+    const foreign = await createFixture('ALL_FOREIGN');
+    const ownerService = createService([
+      'g'.repeat(43),
+      'h'.repeat(43),
+    ]).service;
+    const foreignService = createService(['i'.repeat(43)]).service;
+    const current = await ownerService.createSession(owner.identity, context);
+    const second = await ownerService.createSession(owner.identity, context);
+    const foreignSession = await foreignService.createSession(
+      foreign.identity,
+      context,
+    );
+    const actor = createActor(owner, current.sessionId);
+
+    await repository.revokeAllOwned(actor, context);
+
+    await expect(repository.isAccessSessionActive(actor)).resolves.toBe(false);
+    await expect(
+      repository.isAccessSessionActive(createActor(owner, second.sessionId)),
+    ).resolves.toBe(false);
+    await expect(
+      repository.isAccessSessionActive(
+        createActor(foreign, foreignSession.sessionId),
+      ),
+    ).resolves.toBe(true);
   });
 });

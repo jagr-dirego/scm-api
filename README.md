@@ -22,7 +22,7 @@ El bootstrap inicial ya incluye:
 
 Todavia no incluye:
 
-- listado y administracion de sesiones; corresponden al siguiente bloque de HU-28
+- guards RBAC y permisos de negocio; corresponden a HU-29
 - endpoints de importacion
 - procesamiento asincrono
 
@@ -77,7 +77,15 @@ pnpm.cmd security:jwt:generate-local
 
 El comando actualiza `.env` sin imprimir claves, se niega a operar si detecta `NODE_ENV=production` y no crea respaldos con secretos.
 
-El nucleo de sesiones soporta creacion, rotacion, expiracion, deteccion de reuso, revocacion compensatoria y logout auditado. El siguiente bloque incorporara listado y revocacion administrativa de sesiones propias.
+El nucleo de sesiones soporta creacion, rotacion, expiracion, deteccion de reuso, revocacion compensatoria, logout auditado y administracion de sesiones propias.
+
+Los endpoints protegidos de sesiones son:
+
+- `GET /api/v1/auth/sessions`: lista exclusivamente sesiones activas propias dentro de la organizacion del token.
+- `DELETE /api/v1/auth/sessions/:sessionId`: revoca de forma idempotente una sesion propia.
+- `POST /api/v1/auth/logout-all`: revoca todas las sesiones propias de la organizacion autenticada y elimina la cookie actual.
+
+Estos endpoints exigen `Authorization: Bearer <access-token>`. El guard valida firma y claims, y despues confirma en PostgreSQL que la sesion, usuario, organizacion y membresia siguen activos. No se confia en IDs de usuario u organizacion recibidos por body, query o URL.
 
 ## Reglas de repositorio
 

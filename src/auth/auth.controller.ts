@@ -2,16 +2,21 @@ import {
   BadRequestException,
   Body,
   Controller,
+  Delete,
   ForbiddenException,
+  Get,
   HttpCode,
   Post,
+  Param,
   Req,
   Res,
   ServiceUnavailableException,
   UnauthorizedException,
+  UseGuards,
 } from '@nestjs/common';
 import {
   ApiBody,
+  ApiBearerAuth,
   ApiCookieAuth,
   ApiOperation,
   ApiResponse,
@@ -19,6 +24,10 @@ import {
 } from '@nestjs/swagger';
 import { ZodError } from 'zod';
 import { AuthHttpService, type CookieReply } from './auth-http.service';
+import {
+  AccessSessionGuard,
+  type AuthenticatedRequest,
+} from './access-session.guard';
 import type {
   AuthenticatedIdentity,
   AuthenticationContext,
@@ -143,6 +152,57 @@ export class AuthController {
     }
   }
 
+  @Get('sessions')
+  @UseGuards(AccessSessionGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Listar las sesiones activas propias' })
+  @ApiResponse({ status: 200, description: 'Sesiones activas del usuario' })
+  async listSessions(@Req() request: AuthenticatedRequest) {
+    return {
+      sessions: await this.sessionService.listSessions(
+        this.authenticatedActor(request),
+      ),
+    };
+  }
+
+  @Delete('sessions/:sessionId')
+  @HttpCode(204)
+  @UseGuards(AccessSessionGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Revocar una sesion propia' })
+  @ApiResponse({ status: 204, description: 'Operacion completada' })
+  async revokeSession(
+    @Param('sessionId') sessionId: string,
+    @Req() request: AuthenticatedRequest,
+  ): Promise<void> {
+    try {
+      await this.sessionService.revokeOwnedSession(
+        this.authenticatedActor(request),
+        sessionId,
+        this.context(request),
+      );
+    } catch (error) {
+      this.rethrow(error);
+    }
+  }
+
+  @Post('logout-all')
+  @HttpCode(204)
+  @UseGuards(AccessSessionGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Revocar todas las sesiones propias' })
+  @ApiResponse({ status: 204, description: 'Sesiones revocadas' })
+  async logoutAll(
+    @Req() request: AuthenticatedRequest,
+    @Res({ passthrough: true }) reply: CookieReply,
+  ): Promise<void> {
+    await this.sessionService.revokeAllSessions(
+      this.authenticatedActor(request),
+      this.context(request),
+    );
+    this.authHttpService.clearRefreshCookie(reply);
+  }
+
   private response(tokens: SessionTokenPair, identity?: AuthenticatedIdentity) {
     return {
       accessToken: tokens.accessToken,
@@ -166,13 +226,26 @@ export class AuthController {
     };
   }
 
-  private context(request: AuthRequest): AuthenticationContext {
+  private context(
+    request: AuthRequest | AuthenticatedRequest,
+  ): AuthenticationContext {
     const userAgent = request.headers['user-agent'];
     return {
       ipAddress: request.ip,
       userAgent:
         typeof userAgent === 'string' ? userAgent.slice(0, 1024) : undefined,
     };
+  }
+
+  private authenticatedActor(request: AuthenticatedRequest) {
+    if (!request.auth) {
+      throw new UnauthorizedException({
+        statusCode: 401,
+        code: 'AUTH_INVALID_ACCESS_TOKEN',
+        message: 'Access token no valido',
+      });
+    }
+    return request.auth;
   }
 
   private rethrow(error: unknown): never {

@@ -41,6 +41,9 @@ const createDependencies = () => {
     }),
     revokeAfterTokenFailure: vi.fn().mockResolvedValue(undefined),
     revokeByRefreshToken: vi.fn().mockResolvedValue(true),
+    listActive: vi.fn().mockResolvedValue([]),
+    revokeOwned: vi.fn().mockResolvedValue(undefined),
+    revokeAllOwned: vi.fn().mockResolvedValue(undefined),
   };
   const tokenService = {
     generateRefreshToken: vi
@@ -162,5 +165,70 @@ describe('SessionService', () => {
     await expect(
       service.revokeSession('z'.repeat(43), context),
     ).rejects.toBeInstanceOf(RefreshTokenError);
+  });
+
+  it('lists only repository sessions and marks the current one', async () => {
+    const { service, repository } = createDependencies();
+    repository.listActive.mockResolvedValue([
+      {
+        id: '10000000-0000-4000-8000-000000000004',
+        deviceName: null,
+      },
+      {
+        id: '10000000-0000-4000-8000-000000000005',
+        deviceName: 'Firefox',
+      },
+    ]);
+
+    const sessions = await service.listSessions({
+      userId: identity.userId,
+      organizationId: identity.organizationId,
+      sessionId: '10000000-0000-4000-8000-000000000004',
+      tokenId: '10000000-0000-4000-8000-000000000006',
+      issuedAt: 1,
+      expiresAt: 2,
+    });
+
+    expect(repository.listActive).toHaveBeenCalledWith(
+      identity.userId,
+      identity.organizationId,
+    );
+    expect(sessions.map(({ current }) => current)).toEqual([true, false]);
+  });
+
+  it('rejects a malformed target session before PostgreSQL', async () => {
+    const { service, repository } = createDependencies();
+
+    await expect(
+      service.revokeOwnedSession(
+        {
+          userId: identity.userId,
+          organizationId: identity.organizationId,
+          sessionId: '10000000-0000-4000-8000-000000000004',
+          tokenId: '10000000-0000-4000-8000-000000000006',
+          issuedAt: 1,
+          expiresAt: 2,
+        },
+        'not-a-uuid',
+        context,
+      ),
+    ).rejects.toBeDefined();
+    expect(repository.revokeOwned).not.toHaveBeenCalled();
+  });
+
+  it('delegates global revocation with the authenticated actor', async () => {
+    const { service, repository } = createDependencies();
+    const actor = {
+      userId: identity.userId,
+      organizationId: identity.organizationId,
+      sessionId: '10000000-0000-4000-8000-000000000004',
+      tokenId: '10000000-0000-4000-8000-000000000006',
+      issuedAt: 1,
+      expiresAt: 2,
+    };
+
+    await service.revokeAllSessions(actor, context);
+
+    expect(repository.revokeAllOwned).toHaveBeenCalledWith(actor, context);
   });
 });

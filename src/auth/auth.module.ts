@@ -5,6 +5,7 @@ import { parseTokenEnvironment } from '../config/token-environment.schema';
 import { AuthController } from './auth.controller';
 import { AUTH_HTTP_OPTIONS, AUTH_SECURITY_OPTIONS } from './auth.constants';
 import { AuthHttpService } from './auth-http.service';
+import { AccessSessionGuard } from './access-session.guard';
 import { AuthRepository } from './auth.repository';
 import { AuthService } from './auth.service';
 import { PASSWORD_HASH_OPTIONS } from './password.constants';
@@ -29,6 +30,7 @@ import { TokenService } from './token.service';
       useFactory: () => parseTokenEnvironment(process.env),
     },
     AuthRepository,
+    AccessSessionGuard,
     AuthHttpService,
     AuthService,
     PasswordService,

@@ -1,4 +1,5 @@
 import { Inject, Injectable } from '@nestjs/common';
+import { z } from 'zod';
 import type {
   AuthenticatedIdentity,
   AuthenticationContext,
@@ -10,6 +11,14 @@ import {
 import { SessionRepository } from './session.repository';
 import { TOKEN_OPTIONS, type TokenOptions } from './token.constants';
 import { TokenService } from './token.service';
+import type { VerifiedAccessToken } from './token.service';
+import type { SessionSummary } from './session.repository';
+
+const sessionIdSchema = z.string().uuid();
+
+export interface SessionView extends SessionSummary {
+  current: boolean;
+}
 
 export interface SessionTokenPair {
   accessToken: string;
@@ -129,6 +138,36 @@ export class SessionService {
       context,
     );
     if (!revoked) throw new RefreshTokenError();
+  }
+
+  async listSessions(actor: VerifiedAccessToken): Promise<SessionView[]> {
+    const sessions = await this.repository.listActive(
+      actor.userId,
+      actor.organizationId,
+    );
+    return sessions.map((session) => ({
+      ...session,
+      current: session.id === actor.sessionId,
+    }));
+  }
+
+  async revokeOwnedSession(
+    actor: VerifiedAccessToken,
+    targetSessionId: string,
+    context: AuthenticationContext,
+  ): Promise<void> {
+    await this.repository.revokeOwned(
+      actor,
+      sessionIdSchema.parse(targetSessionId),
+      context,
+    );
+  }
+
+  async revokeAllSessions(
+    actor: VerifiedAccessToken,
+    context: AuthenticationContext,
+  ): Promise<void> {
+    await this.repository.revokeAllOwned(actor, context);
   }
 
   private addSeconds(date: Date, seconds: number): Date {

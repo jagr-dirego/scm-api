@@ -5,6 +5,18 @@ import type {
   AuthenticatedIdentity,
   AuthenticationContext,
 } from './auth.repository';
+import type { VerifiedAccessToken } from './token.service';
+
+export interface SessionSummary {
+  id: string;
+  deviceName: string | null;
+  ipAddress: string | null;
+  userAgent: string | null;
+  lastSeenAt: Date;
+  idleExpiresAt: Date;
+  absoluteExpiresAt: Date;
+  createdAt: Date;
+}
 
 export interface CreateSessionRecordInput {
   identity: AuthenticatedIdentity;
@@ -138,6 +150,80 @@ export class SessionRepository {
     } finally {
       client.release();
     }
+  }
+
+  async isAccessSessionActive(claims: VerifiedAccessToken): Promise<boolean> {
+    const result = await this.pool.query(
+      `SELECT 1
+       FROM sessions AS s
+       JOIN users AS u ON u.id = s.user_id
+       JOIN organizations AS o ON o.id = s.organization_id
+       WHERE s.id = $1 AND s.user_id = $2 AND s.organization_id = $3
+         AND s.revoked_at IS NULL
+         AND s.idle_expires_at > now()
+         AND s.absolute_expires_at > now()
+         AND u.status = 'active'
+         AND o.status = 'active'
+         AND EXISTS (
+           SELECT 1 FROM user_memberships AS m
+           WHERE m.user_id = s.user_id
+             AND m.organization_id = s.organization_id
+             AND m.status = 'active'
+         )`,
+      [claims.sessionId, claims.userId, claims.organizationId],
+    );
+    return Boolean(result.rowCount);
+  }
+
+  async listActive(
+    userId: string,
+    organizationId: string,
+  ): Promise<SessionSummary[]> {
+    const result = await this.pool.query<{
+      id: string;
+      device_name: string | null;
+      ip_address: string | null;
+      user_agent: string | null;
+      last_seen_at: Date;
+      idle_expires_at: Date;
+      absolute_expires_at: Date;
+      created_at: Date;
+    }>(
+      `SELECT id, device_name, host(ip_address) AS ip_address, user_agent,
+              last_seen_at, idle_expires_at, absolute_expires_at, created_at
+       FROM sessions
+       WHERE user_id = $1 AND organization_id = $2
+         AND revoked_at IS NULL
+         AND idle_expires_at > now()
+         AND absolute_expires_at > now()
+       ORDER BY last_seen_at DESC, created_at DESC`,
+      [userId, organizationId],
+    );
+    return result.rows.map((row) => ({
+      id: row.id,
+      deviceName: row.device_name,
+      ipAddress: row.ip_address,
+      userAgent: row.user_agent,
+      lastSeenAt: row.last_seen_at,
+      idleExpiresAt: row.idle_expires_at,
+      absoluteExpiresAt: row.absolute_expires_at,
+      createdAt: row.created_at,
+    }));
+  }
+
+  async revokeOwned(
+    actor: VerifiedAccessToken,
+    targetSessionId: string,
+    context: AuthenticationContext,
+  ): Promise<void> {
+    await this.revokeOwnedSessions(actor, context, targetSessionId);
+  }
+
+  async revokeAllOwned(
+    actor: VerifiedAccessToken,
+    context: AuthenticationContext,
+  ): Promise<void> {
+    await this.revokeOwnedSessions(actor, context);
   }
 
   async rotate(
@@ -357,6 +443,64 @@ export class SessionRepository {
       });
       await client.query('COMMIT');
       return true;
+    } catch (error) {
+      await client.query('ROLLBACK');
+      throw error;
+    } finally {
+      client.release();
+    }
+  }
+
+  private async revokeOwnedSessions(
+    actor: VerifiedAccessToken,
+    context: AuthenticationContext,
+    targetSessionId?: string,
+  ): Promise<void> {
+    const client = await this.pool.connect();
+    try {
+      await client.query('BEGIN');
+      const result = await client.query<{ id: string }>(
+        `SELECT id
+         FROM sessions
+         WHERE user_id = $1 AND organization_id = $2
+           AND ($3::uuid IS NULL OR id = $3)
+           AND revoked_at IS NULL
+         FOR UPDATE`,
+        [actor.userId, actor.organizationId, targetSessionId ?? null],
+      );
+      const sessionIds = result.rows.map(({ id }) => id);
+      if (sessionIds.length > 0) {
+        await client.query(
+          `UPDATE sessions
+           SET revoked_at = now(),
+               revoked_by_user_id = $2,
+               revoked_reason = $3
+           WHERE id = ANY($1::uuid[])`,
+          [
+            sessionIds,
+            actor.userId,
+            targetSessionId ? 'user_revoked_session' : 'user_logout_all',
+          ],
+        );
+        await client.query(
+          `UPDATE refresh_tokens
+           SET revoked_at = COALESCE(revoked_at, now())
+           WHERE session_id = ANY($1::uuid[])`,
+          [sessionIds],
+        );
+        await this.insertEvent(client, {
+          sessionId: actor.sessionId,
+          userId: actor.userId,
+          organizationId: actor.organizationId,
+          eventType: targetSessionId
+            ? 'session.revoked'
+            : 'sessions.revoked_all',
+          success: true,
+          failureReason: null,
+          context,
+        });
+      }
+      await client.query('COMMIT');
     } catch (error) {
       await client.query('ROLLBACK');
       throw error;

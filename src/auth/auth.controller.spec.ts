@@ -51,6 +51,9 @@ const createController = (
     createSession: vi.fn().mockResolvedValue(tokens),
     rotateSession: vi.fn().mockResolvedValue(tokens),
     revokeSession: vi.fn().mockResolvedValue(undefined),
+    listSessions: vi.fn().mockResolvedValue([]),
+    revokeOwnedSession: vi.fn().mockResolvedValue(undefined),
+    revokeAllSessions: vi.fn().mockResolvedValue(undefined),
     ...sessionOverrides,
   };
   const http = {
@@ -197,5 +200,78 @@ describe('AuthController', () => {
       .catch((caught: unknown) => caught);
 
     expect(error).toBeInstanceOf(BadRequestException);
+  });
+
+  it('lists sessions using only the actor attached by the guard', async () => {
+    const { controller, session } = createController();
+    const authenticatedRequest = {
+      ...request,
+      auth: {
+        userId: identity.userId,
+        organizationId: identity.organizationId,
+        sessionId: tokens.sessionId,
+        tokenId: '10000000-0000-4000-8000-000000000005',
+        issuedAt: 1,
+        expiresAt: 2,
+      },
+    };
+
+    await expect(
+      controller.listSessions(authenticatedRequest),
+    ).resolves.toEqual({
+      sessions: [],
+    });
+    expect(session.listSessions).toHaveBeenCalledWith(
+      authenticatedRequest.auth,
+    );
+  });
+
+  it('revokes an owned session without accepting identity from input', async () => {
+    const { controller, session } = createController();
+    const authenticatedRequest = {
+      ...request,
+      auth: {
+        userId: identity.userId,
+        organizationId: identity.organizationId,
+        sessionId: tokens.sessionId,
+        tokenId: '10000000-0000-4000-8000-000000000005',
+        issuedAt: 1,
+        expiresAt: 2,
+      },
+    };
+
+    await controller.revokeSession(
+      '10000000-0000-4000-8000-000000000006',
+      authenticatedRequest,
+    );
+
+    expect(session.revokeOwnedSession).toHaveBeenCalledWith(
+      authenticatedRequest.auth,
+      '10000000-0000-4000-8000-000000000006',
+      expect.objectContaining({ ipAddress: '127.0.0.1' }),
+    );
+  });
+
+  it('revokes every owned session and clears the current cookie', async () => {
+    const { controller, session, http } = createController();
+    const authenticatedRequest = {
+      ...request,
+      auth: {
+        userId: identity.userId,
+        organizationId: identity.organizationId,
+        sessionId: tokens.sessionId,
+        tokenId: '10000000-0000-4000-8000-000000000005',
+        issuedAt: 1,
+        expiresAt: 2,
+      },
+    };
+
+    await controller.logoutAll(authenticatedRequest, reply);
+
+    expect(session.revokeAllSessions).toHaveBeenCalledWith(
+      authenticatedRequest.auth,
+      expect.objectContaining({ ipAddress: '127.0.0.1' }),
+    );
+    expect(http.clearRefreshCookie).toHaveBeenCalledWith(reply);
   });
 });
