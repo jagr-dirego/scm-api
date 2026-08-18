@@ -35,7 +35,6 @@ export class AuthorizationRepository {
          SELECT p.id, p.code
          FROM permissions AS p
          WHERE p.code = ANY($3::text[])
-           AND p.status = 'active'
        ), valid_branch AS (
          SELECT b.id
          FROM branches AS b
@@ -60,9 +59,8 @@ export class AuthorizationRepository {
               AND (role_record.organization_id IS NULL
                    OR role_record.organization_id = identity.organization_id)
              JOIN role_permissions AS role_permission
-               ON role_permission.role_id = role_record.id
+              ON role_permission.role_id = role_record.id
               AND role_permission.permission_id = permission.id
-              AND role_permission.allowed = true
              WHERE
                (assignment.scope = 'organization'
                 OR (assignment.scope = 'branch'
