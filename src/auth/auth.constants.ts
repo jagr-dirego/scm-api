@@ -4,3 +4,9 @@ export interface AuthSecurityOptions {
   maxFailedAttempts: number;
   lockoutMinutes: number;
 }
+
+export const AUTH_HTTP_OPTIONS = Symbol('AUTH_HTTP_OPTIONS');
+
+export interface AuthHttpOptions {
+  trustedOrigins: string[];
+}

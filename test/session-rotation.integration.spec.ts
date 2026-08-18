@@ -259,6 +259,36 @@ describe.sequential('SessionService PostgreSQL integration', () => {
     expect(session.rows[0]?.revoked_reason).toBe('session_principal_inactive');
   });
 
+  it('revokes the complete token family and audits an explicit logout', async () => {
+    const fixture = await createFixture('LOGOUT');
+    const { service } = createService();
+    const created = await service.createSession(fixture.identity, context);
+    const rotated = await service.rotateSession(created.refreshToken, context);
+
+    await service.revokeSession(rotated.refreshToken, context);
+
+    const session = await pool.query<SessionStateRow>(
+      'SELECT revoked_at, revoked_reason FROM sessions WHERE id = $1',
+      [created.sessionId],
+    );
+    const tokens = await pool.query<TokenFamilyRow>(
+      'SELECT revoked_at FROM refresh_tokens WHERE session_id = $1',
+      [created.sessionId],
+    );
+    const events = await pool.query<{ event_type: string }>(
+      `SELECT event_type FROM auth_events
+       WHERE session_id = $1 AND event_type = 'logout.succeeded'`,
+      [created.sessionId],
+    );
+
+    expect(session.rows[0]?.revoked_at).toBeInstanceOf(Date);
+    expect(session.rows[0]?.revoked_reason).toBe('user_logout');
+    expect(
+      tokens.rows.every(({ revoked_at }) => revoked_at instanceof Date),
+    ).toBe(true);
+    expect(events.rows).toEqual([{ event_type: 'logout.succeeded' }]);
+  });
+
   it('allows one concurrent refresh and revokes the session on the second use', async () => {
     const fixture = await createFixture('CONCURRENT');
     const { service } = createService();

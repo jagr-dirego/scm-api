@@ -308,6 +308,63 @@ export class SessionRepository {
     }
   }
 
+  async revokeByRefreshToken(
+    tokenHash: string,
+    context: AuthenticationContext,
+  ): Promise<boolean> {
+    const client = await this.pool.connect();
+    try {
+      await client.query('BEGIN');
+      const result = await client.query<{
+        session_id: string;
+        user_id: string;
+        organization_id: string;
+      }>(
+        `SELECT s.id AS session_id, s.user_id, s.organization_id
+         FROM refresh_tokens AS rt
+         JOIN sessions AS s ON s.id = rt.session_id
+         WHERE rt.token_hash = $1
+         FOR UPDATE OF rt, s`,
+        [tokenHash],
+      );
+      const session = result.rows[0];
+      if (!session) {
+        await client.query('ROLLBACK');
+        return false;
+      }
+
+      await client.query(
+        `UPDATE sessions
+         SET revoked_at = COALESCE(revoked_at, now()),
+             revoked_reason = COALESCE(revoked_reason, 'user_logout')
+         WHERE id = $1`,
+        [session.session_id],
+      );
+      await client.query(
+        `UPDATE refresh_tokens
+         SET revoked_at = COALESCE(revoked_at, now())
+         WHERE session_id = $1`,
+        [session.session_id],
+      );
+      await this.insertEvent(client, {
+        sessionId: session.session_id,
+        userId: session.user_id,
+        organizationId: session.organization_id,
+        eventType: 'logout.succeeded',
+        success: true,
+        failureReason: null,
+        context,
+      });
+      await client.query('COMMIT');
+      return true;
+    } catch (error) {
+      await client.query('ROLLBACK');
+      throw error;
+    } finally {
+      client.release();
+    }
+  }
+
   private async revokeForReuse(
     client: PoolClient,
     current: RefreshRow,

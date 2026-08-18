@@ -117,6 +117,20 @@ export class SessionService {
     }
   }
 
+  async revokeSession(
+    refreshToken: string,
+    context: AuthenticationContext,
+  ): Promise<void> {
+    if (!/^[A-Za-z0-9_-]{43}$/.test(refreshToken)) {
+      throw new RefreshTokenError();
+    }
+    const revoked = await this.repository.revokeByRefreshToken(
+      this.tokenService.hashRefreshToken(refreshToken),
+      context,
+    );
+    if (!revoked) throw new RefreshTokenError();
+  }
+
   private addSeconds(date: Date, seconds: number): Date {
     return new Date(date.getTime() + seconds * 1000);
   }

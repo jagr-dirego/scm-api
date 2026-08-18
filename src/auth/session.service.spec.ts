@@ -40,6 +40,7 @@ const createDependencies = () => {
       absoluteExpiresAt: new Date(now.getTime() + 2_592_000_000),
     }),
     revokeAfterTokenFailure: vi.fn().mockResolvedValue(undefined),
+    revokeByRefreshToken: vi.fn().mockResolvedValue(true),
   };
   const tokenService = {
     generateRefreshToken: vi
@@ -141,5 +142,25 @@ describe('SessionService', () => {
         message: 'Refresh token no valido',
       });
     }
+  });
+
+  it('revokes a session using only the refresh token hash', async () => {
+    const { service, repository } = createDependencies();
+
+    await service.revokeSession('z'.repeat(43), context);
+
+    expect(repository.revokeByRefreshToken).toHaveBeenCalledWith(
+      `hash:${'z'.repeat(43)}`,
+      context,
+    );
+  });
+
+  it('returns a generic error when logout cannot resolve the token', async () => {
+    const { service, repository } = createDependencies();
+    repository.revokeByRefreshToken.mockResolvedValue(false);
+
+    await expect(
+      service.revokeSession('z'.repeat(43), context),
+    ).rejects.toBeInstanceOf(RefreshTokenError);
   });
 });

@@ -17,11 +17,12 @@ El bootstrap inicial ya incluye:
 - pruebas unitarias y de integracion con Vitest
 - Argon2id, `PasswordService` y nucleo transaccional del bootstrap inicial
 - login con email y password, bloqueo temporal y auditoria de eventos
-- configuracion JWT RS256 validada y `TokenService` sin emision funcional en login
+- login con sesion, access token RS256 y refresh token en cookie segura
+- rotacion estricta, deteccion de reuso y logout transaccional
 
 Todavia no incluye:
 
-- JWT, refresh tokens y sesiones; corresponden a HU-28
+- listado y administracion de sesiones; corresponden al siguiente bloque de HU-28
 - endpoints de importacion
 - procesamiento asincrono
 
@@ -58,11 +59,13 @@ Solicita organizacion, email, nombre y password con confirmacion oculta. Antes d
 
 La segunda ejecucion se rechaza si ya existe una asignacion global activa de `SuperAdmin`. No existe opcion `--force`.
 
-## Login sin sesion
+## Autenticacion y sesiones
 
-`POST /api/v1/auth/login` valida email, password y, cuando aplica, `organizationCode`. Todos los fallos de identidad o estado responden `401` con el mismo contrato para evitar enumeracion de usuarios. El exito devuelve unicamente IDs de usuario, organizacion y membresia, email y nombre visible.
+`POST /api/v1/auth/login` valida email, password y, cuando aplica, `organizationCode`. El exito crea una sesion, devuelve el access token en JSON y entrega el refresh token exclusivamente mediante cookie. La respuesta nunca contiene el refresh token.
 
-Este endpoint todavia no emite JWT, refresh token ni crea registros en `sessions`. Esa continuidad pertenece a HU-28.
+`POST /api/v1/auth/refresh` rota el refresh token y `POST /api/v1/auth/logout` revoca la sesion completa. Login, refresh y logout exigen un encabezado `Origin` incluido exactamente en `CORS_ORIGINS`; refresh y logout reciben la cookie, nunca el token mediante body o URL.
+
+La cookie usa `HttpOnly`, `SameSite=Lax`, `Path=/`, no define `Domain` y agrega `Secure` en produccion. El frontend debe enviar credenciales y serializar las renovaciones para cumplir la politica estricta de reuso.
 
 La base criptografica de HU-28 utiliza `jose`, claves RSA 3072, `kid`, issuer, audience y access tokens de 10 minutos. Las claves se reciben como Base64 mediante secretos de entorno; no existen claves por defecto ni material criptografico versionado.
 
@@ -74,7 +77,7 @@ pnpm.cmd security:jwt:generate-local
 
 El comando actualiza `.env` sin imprimir claves, se niega a operar si detecta `NODE_ENV=production` y no crea respaldos con secretos.
 
-El nucleo de sesiones ya soporta creacion, rotacion de refresh token, expiracion, deteccion de reuso y revocacion compensatoria. Todavia no esta conectado al controlador de login ni emite cookies HTTP.
+El nucleo de sesiones soporta creacion, rotacion, expiracion, deteccion de reuso, revocacion compensatoria y logout auditado. El siguiente bloque incorporara listado y revocacion administrativa de sesiones propias.
 
 ## Reglas de repositorio
 

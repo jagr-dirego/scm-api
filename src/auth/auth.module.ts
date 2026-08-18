@@ -3,7 +3,8 @@ import { appConfig } from '../config/app.config';
 import { DatabaseModule } from '../database/database.module';
 import { parseTokenEnvironment } from '../config/token-environment.schema';
 import { AuthController } from './auth.controller';
-import { AUTH_SECURITY_OPTIONS } from './auth.constants';
+import { AUTH_HTTP_OPTIONS, AUTH_SECURITY_OPTIONS } from './auth.constants';
+import { AuthHttpService } from './auth-http.service';
 import { AuthRepository } from './auth.repository';
 import { AuthService } from './auth.service';
 import { PASSWORD_HASH_OPTIONS } from './password.constants';
@@ -20,10 +21,15 @@ import { TokenService } from './token.service';
     { provide: PASSWORD_HASH_OPTIONS, useValue: appConfig.argon2 },
     { provide: AUTH_SECURITY_OPTIONS, useValue: appConfig.auth },
     {
+      provide: AUTH_HTTP_OPTIONS,
+      useValue: { trustedOrigins: appConfig.corsOrigins },
+    },
+    {
       provide: TOKEN_OPTIONS,
       useFactory: () => parseTokenEnvironment(process.env),
     },
     AuthRepository,
+    AuthHttpService,
     AuthService,
     PasswordService,
     SessionRepository,
