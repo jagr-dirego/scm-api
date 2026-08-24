@@ -1,6 +1,5 @@
 import { NestFactory } from '@nestjs/core';
 import { NestFastifyApplication } from '@nestjs/platform-fastify';
-import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { AppModule } from './app.module';
 import { appConfig } from './config/app.config';
 import {
@@ -8,6 +7,7 @@ import {
   applicationNestLogger,
 } from './observability/application-logger';
 import { createFastifyAdapter } from './observability/fastify-adapter';
+import { configureOpenApi } from './openapi/configure-openapi';
 
 async function bootstrap() {
   const app = await NestFactory.create<NestFastifyApplication>(
@@ -22,16 +22,7 @@ async function bootstrap() {
     credentials: true,
   });
 
-  if (appConfig.openApiEnabled) {
-    const openApiConfig = new DocumentBuilder()
-      .setTitle('DIREGO SCM API')
-      .setDescription('Backend API de DIREGO SCM')
-      .setVersion('1.0')
-      .addBearerAuth()
-      .build();
-    const document = SwaggerModule.createDocument(app, openApiConfig);
-    SwaggerModule.setup('api/v1/docs', app, document);
-  }
+  configureOpenApi(app, appConfig.openApiEnabled);
 
   await app.listen(appConfig.port, '0.0.0.0');
 }

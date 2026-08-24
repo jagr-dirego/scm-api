@@ -42,6 +42,7 @@ import { TokenService } from './token.service';
     AccessSessionGuard,
     AuthService,
     PasswordService,
+    SessionRepository,
     SessionService,
     TokenService,
   ],

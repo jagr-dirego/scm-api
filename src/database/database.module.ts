@@ -1,5 +1,4 @@
 import { Global, Module } from '@nestjs/common';
-import * as schema from '@jagr-dirego/scm-database/schema';
 import { drizzle } from 'drizzle-orm/node-postgres';
 import { Pool } from 'pg';
 import { appConfig } from '../config/app.config';
@@ -28,9 +27,12 @@ import { DatabaseService } from './database.service';
       inject: [DATABASE_POOL],
       useFactory: (pool: Pool) => drizzle({ client: pool }),
     },
-    { provide: DATABASE_SCHEMA, useValue: schema },
+    {
+      provide: DATABASE_SCHEMA,
+      useFactory: () => import('@jagr-dirego/scm-database/schema'),
+    },
     DatabaseService,
   ],
-  exports: [DATABASE_CLIENT, DATABASE_SCHEMA, DatabaseService],
+  exports: [DATABASE_POOL, DATABASE_CLIENT, DATABASE_SCHEMA, DatabaseService],
 })
 export class DatabaseModule {}

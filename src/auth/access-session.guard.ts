@@ -1,6 +1,7 @@
 import {
   CanActivate,
   ExecutionContext,
+  Inject,
   Injectable,
   ServiceUnavailableException,
   UnauthorizedException,
@@ -17,7 +18,8 @@ export interface AuthenticatedRequest {
 @Injectable()
 export class AccessSessionGuard implements CanActivate {
   constructor(
-    private readonly tokenService: TokenService,
+    @Inject(TokenService) private readonly tokenService: TokenService,
+    @Inject(SessionRepository)
     private readonly sessionRepository: SessionRepository,
   ) {}
 
