@@ -1,7 +1,16 @@
 version: 2
+
+registries:
+  dirego-github-packages:
+    type: npm-registry
+    url: https://npm.pkg.github.com
+    token: ${{secrets.DIREGO_PACKAGES_TOKEN}}
+
 updates:
   - package-ecosystem: npm
     directory: "/"
+    registries:
+      - dirego-github-packages
     schedule:
       interval: weekly
     open-pull-requests-limit: 10
