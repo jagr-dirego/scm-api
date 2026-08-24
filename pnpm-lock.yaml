@@ -16,7 +16,7 @@ importers:
         version: 10.1.3
       '@jagr-dirego/scm-database':
         specifier: 1.0.4
-        version: 1.0.4(@types/pg@8.21.0)(pg@8.23.0)(zod@3.25.76)
+        version: 1.0.4(@types/pg@8.21.0)(pg@8.23.0)(zod@4.4.3)
       '@nestjs/common':
         specifier: ^11.0.1
         version: 11.2.0(reflect-metadata@0.2.2)(rxjs@7.8.2)
@@ -34,7 +34,7 @@ importers:
         version: 0.45.1
       drizzle-orm:
         specifier: 1.0.0-rc.4
-        version: 1.0.0-rc.4(@types/pg@8.21.0)(pg@8.23.0)(zod@3.25.76)
+        version: 1.0.0-rc.4(@types/pg@8.21.0)(pg@8.23.0)(zod@4.4.3)
       jose:
         specifier: 6.2.9
         version: 6.2.9
@@ -51,8 +51,8 @@ importers:
         specifier: ^7.8.1
         version: 7.8.2
       zod:
-        specifier: ^3.25.76
-        version: 3.25.76
+        specifier: ^4.4.3
+        version: 4.4.3
     devDependencies:
       '@eslint/eslintrc':
         specifier: ^3.2.0
@@ -2527,8 +2527,8 @@ packages:
     resolution: {integrity: sha512-U/PBtDf35ff0D8X8D0jfdzHYEPFxAI7jJlxZXwCSez5M3190m+QobIfh+sWDWSHMCWWJN2AWamkegn6vr6YBTw==}
     engines: {node: '>=18'}
 
-  zod@3.25.76:
-    resolution: {integrity: sha512-gzUt/qt81nXsFGKIFcC3YnfEAx5NkunCfnDlvuBSSFS02bcXu4Lmea0AFIUwbLWxWPx3d9p8S5QoaujKcNQxcQ==}
+  zod@4.4.3:
+    resolution: {integrity: sha512-ytENFjIJFl2UwYglde2jchW2Hwm4GJFLDiSXWdTrJQBIN9Fcyp7n4DhxJEiWNAJMV1/BqWfW/kkg71UDcHJyTQ==}
 
 snapshots:
 
@@ -2934,9 +2934,9 @@ snapshots:
     optionalDependencies:
       '@types/node': 24.13.3
 
-  '@jagr-dirego/scm-database@1.0.4(@types/pg@8.21.0)(pg@8.23.0)(zod@3.25.76)':
+  '@jagr-dirego/scm-database@1.0.4(@types/pg@8.21.0)(pg@8.23.0)(zod@4.4.3)':
     dependencies:
-      drizzle-orm: 1.0.0-rc.4(@types/pg@8.21.0)(pg@8.23.0)(zod@3.25.76)
+      drizzle-orm: 1.0.0-rc.4(@types/pg@8.21.0)(pg@8.23.0)(zod@4.4.3)
     transitivePeerDependencies:
       - '@aws-sdk/client-rds-data'
       - '@cloudflare/workers-types'
@@ -3690,11 +3690,11 @@ snapshots:
 
   dequal@2.0.3: {}
 
-  drizzle-orm@1.0.0-rc.4(@types/pg@8.21.0)(pg@8.23.0)(zod@3.25.76):
+  drizzle-orm@1.0.0-rc.4(@types/pg@8.21.0)(pg@8.23.0)(zod@4.4.3):
     optionalDependencies:
       '@types/pg': 8.21.0
       pg: 8.23.0
-      zod: 3.25.76
+      zod: 4.4.3
 
   electron-to-chromium@1.5.406: {}
 
@@ -4768,4 +4768,4 @@ snapshots:
 
   yoctocolors-cjs@2.1.3: {}
 
-  zod@3.25.76: {}
+  zod@4.4.3: {}
