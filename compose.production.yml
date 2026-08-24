@@ -4,7 +4,7 @@ services:
       context: .
       dockerfile: Dockerfile
       secrets:
-        - npmrc
+        - github_packages_token
     restart: unless-stopped
     init: true
     stop_grace_period: 30s
@@ -44,5 +44,5 @@ networks:
     name: scm_internal_net
 
 secrets:
-  npmrc:
-    environment: NPMRC_BUILD_SECRET
+  github_packages_token:
+    environment: GITHUB_PACKAGES_TOKEN

@@ -11,8 +11,14 @@ WORKDIR /app
 
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
 
-RUN --mount=type=secret,id=npmrc,target=/root/.npmrc,required=true \
-    pnpm install --frozen-lockfile
+RUN --mount=type=secret,id=github_packages_token,required=true \
+    token="$(cat /run/secrets/github_packages_token)" && \
+    printf '%s\n' \
+      '@jagr-dirego:registry=https://npm.pkg.github.com' \
+      "//npm.pkg.github.com/:_authToken=${token}" \
+      'always-auth=true' > /tmp/npmrc && \
+    NPM_CONFIG_USERCONFIG=/tmp/npmrc pnpm install --frozen-lockfile && \
+    rm -f /tmp/npmrc
 
 FROM dependencies AS build
 
