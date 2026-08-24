@@ -66,8 +66,11 @@ jobs:
       - name: Ejecutar pruebas
         run: pnpm test
 
-      - name: Ejecutar pruebas de integracion PostgreSQL
-        run: pnpm test:integration
+      - name: Preparar PostgreSQL efimero
+        run: pnpm db:test:prepare
+
+      - name: Ejecutar integraciones PostgreSQL
+        run: pnpm test:integration:all
 
       - name: Compilar API
         run: pnpm build
