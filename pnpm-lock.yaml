@@ -15,8 +15,8 @@ importers:
         specifier: ^10.1.3
         version: 10.1.3
       '@jagr-dirego/scm-database':
-        specifier: 1.0.4
-        version: 1.0.4(@types/pg@8.21.0)(pg@8.23.0)(zod@3.25.76)
+        specifier: 1.0.5
+        version: 1.0.5(@types/pg@8.21.0)(pg@8.23.0)(zod@3.25.76)
       '@nestjs/common':
         specifier: ^11.2.1
         version: 11.2.1(reflect-metadata@0.2.2)(rxjs@7.8.2)
@@ -544,8 +544,8 @@ packages:
       '@types/node':
         optional: true
 
-  '@jagr-dirego/scm-database@1.0.4':
-    resolution: {integrity: sha512-qbzqz+66qF7ARuMsz/O9w+JBJyZDhh6AwK2NRiqgJLcwbaqDDbx8YmXFmPd7cO9eeh9VfC8PNfnyEeolZudZuA==, tarball: https://npm.pkg.github.com/download/@jagr-dirego/scm-database/1.0.4/96516c67cb5a65a59b6f4aa0e6a1337e157377d6}
+  '@jagr-dirego/scm-database@1.0.5':
+    resolution: {integrity: sha512-R8eAhVGdAt5ge7Y5r3qAZaC4d/B2DE0u6IyS2FdqDYqF6yFgLwsWQFCBSbahQntOUytk3eErMlQgmIaVq10zPw==, tarball: https://npm.pkg.github.com/download/@jagr-dirego/scm-database/1.0.5/1edb6e3c4f40f7e7a10919fb40a575d4f91d6012}
 
   '@jridgewell/gen-mapping@0.3.13':
     resolution: {integrity: sha512-2kkt/7niJ6MgEPxF0bYdQ6etZaA+fQvDcLKckhy1yIQOzaoKjBBjSj63/aLVjYE3qhRt5dvM+uUyfCg6UKCBbA==}
@@ -3069,7 +3069,7 @@ snapshots:
     optionalDependencies:
       '@types/node': 24.13.3
 
-  '@jagr-dirego/scm-database@1.0.4(@types/pg@8.21.0)(pg@8.23.0)(zod@3.25.76)':
+  '@jagr-dirego/scm-database@1.0.5(@types/pg@8.21.0)(pg@8.23.0)(zod@3.25.76)':
     dependencies:
       drizzle-orm: 1.0.0-rc.4(@types/pg@8.21.0)(pg@8.23.0)(zod@3.25.76)
     transitivePeerDependencies:
