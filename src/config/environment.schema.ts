@@ -1,5 +1,11 @@
 import { z } from 'zod';
 
+const booleanEnvironmentSchema = z.preprocess((value) => {
+  if (value === 'true') return true;
+  if (value === 'false') return false;
+  return value;
+}, z.boolean());
+
 const environmentSchema = z.object({
   NODE_ENV: z
     .enum(['development', 'test', 'production'])
@@ -9,7 +15,7 @@ const environmentSchema = z.object({
     .enum(['fatal', 'error', 'warn', 'info', 'debug', 'trace'])
     .default('info'),
   CORS_ORIGINS: z.string().default('http://localhost:5173'),
-  OPENAPI_ENABLED: z.coerce.boolean().default(true),
+  OPENAPI_ENABLED: booleanEnvironmentSchema.default(true),
   DATABASE_URL: z.string().url().startsWith('postgresql://'),
   ARGON2_MEMORY_COST: z.coerce
     .number()

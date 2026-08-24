@@ -16,6 +16,7 @@ async function bootstrap() {
     { logger: applicationNestLogger },
   );
 
+  app.enableShutdownHooks();
   app.setGlobalPrefix('api/v1');
   app.enableCors({
     origin: appConfig.corsOrigins,

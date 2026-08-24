@@ -45,4 +45,25 @@ describe('parseEnvironment', () => {
       expect(String(error)).not.toContain(invalidUrl);
     }
   });
+
+  it('parses explicit OpenAPI boolean values without string coercion', () => {
+    expect(
+      parseEnvironment({
+        ...requiredEnvironment,
+        OPENAPI_ENABLED: 'false',
+      }).OPENAPI_ENABLED,
+    ).toBe(false);
+    expect(
+      parseEnvironment({
+        ...requiredEnvironment,
+        OPENAPI_ENABLED: 'true',
+      }).OPENAPI_ENABLED,
+    ).toBe(true);
+    expect(() =>
+      parseEnvironment({
+        ...requiredEnvironment,
+        OPENAPI_ENABLED: 'yes',
+      }),
+    ).toThrow('OPENAPI_ENABLED:');
+  });
 });
