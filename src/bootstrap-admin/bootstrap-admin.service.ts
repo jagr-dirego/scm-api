@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Inject, Injectable } from '@nestjs/common';
 import { PasswordService } from '../auth/password.service';
 import {
   BootstrapAdminRepository,
@@ -12,7 +12,9 @@ import {
 @Injectable()
 export class BootstrapAdminService {
   constructor(
+    @Inject(PasswordService)
     private readonly passwordService: PasswordService,
+    @Inject(BootstrapAdminRepository)
     private readonly repository: BootstrapAdminRepository,
   ) {}
 

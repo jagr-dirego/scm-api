@@ -215,6 +215,46 @@ describe.sequential(
       });
     });
 
+    it('resolves global SuperAdmin capabilities in its active membership', async () => {
+      const user = await pool.query<{ id: string }>(
+        `INSERT INTO users (email, display_name, password_hash)
+         VALUES ('superadmin@hu46-context.test', 'Context SuperAdmin', 'not-used')
+         RETURNING id`,
+      );
+      const userId = user.rows[0].id;
+      const tenant = await createTenant(userId, 'SUPERADMIN');
+      const superAdminRole = await pool.query<{ id: string }>(
+        `SELECT id FROM roles
+         WHERE code = 'SuperAdmin'
+           AND organization_id IS NULL
+           AND is_system = true
+           AND status = 'active'`,
+      );
+      const roleId = superAdminRole.rows[0]?.id;
+      if (!roleId) throw new Error('Seed SuperAdmin no encontrado');
+
+      await pool.query(
+        `INSERT INTO user_role_assignments
+           (user_id, organization_id, role_id, scope)
+         VALUES ($1, $2, $3, 'global')`,
+        [userId, tenant.organizationId, roleId],
+      );
+
+      const context = await service.resolve({
+        userId,
+        organizationId: tenant.organizationId,
+        sessionId: tenant.sessionId,
+        tokenId: '10000000-0000-4000-8000-000000000004',
+        issuedAt: 1,
+        expiresAt: 2,
+      });
+
+      expect(context?.capabilities).toEqual(
+        expect.arrayContaining(['audit.view', 'imports.view', 'users.view']),
+      );
+      expect(context?.capabilities).not.toContain('imports.type.stock');
+    });
+
     it('returns null when session and token tenant do not match', async () => {
       const user = await pool.query<{ id: string }>(
         `INSERT INTO users (email, display_name, password_hash)

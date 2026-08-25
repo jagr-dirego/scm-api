@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Inject, Injectable } from '@nestjs/common';
 import { BootstrapAdminService } from './bootstrap-admin.service';
 
 export interface BootstrapAdminPrompt {
@@ -17,7 +17,10 @@ export class BootstrapCommandCancelledError extends Error {
 
 @Injectable()
 export class BootstrapAdminCommandRunner {
-  constructor(private readonly bootstrapAdminService: BootstrapAdminService) {}
+  constructor(
+    @Inject(BootstrapAdminService)
+    private readonly bootstrapAdminService: BootstrapAdminService,
+  ) {}
 
   async run(prompt: BootstrapAdminPrompt): Promise<void> {
     const organizationCode = await prompt.ask('Codigo de organizacion: ');

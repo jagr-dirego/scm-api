@@ -137,6 +137,45 @@ describe.sequential('AuthService PostgreSQL integration', () => {
     ]);
   });
 
+  it('rejects a user without active memberships using the generic error', async () => {
+    const fixture = await createFixture('NO_MEMBERSHIP');
+    await pool.query('DELETE FROM user_memberships WHERE id = $1', [
+      fixture.membershipId,
+    ]);
+
+    await expect(
+      service.login({ email: fixture.email, password }, context),
+    ).rejects.toMatchObject({
+      code: 'AUTH_INVALID_CREDENTIALS',
+      reason: 'membership_inactive',
+    });
+  });
+
+  it('rejects multiple active memberships without exposing organizations', async () => {
+    const fixture = await createFixture('MULTIPLE_MEMBERSHIPS');
+    const secondOrganization = await pool.query<{ id: string }>(
+      `INSERT INTO organizations (code, name, slug)
+       VALUES ($1, $2, $3) RETURNING id`,
+      [
+        'HU27_AUTH_TEST_MULTIPLE_SECOND',
+        'Auth test multiple second',
+        'hu27-auth-test-multiple-second',
+      ],
+    );
+    await pool.query(
+      `INSERT INTO user_memberships (organization_id, user_id)
+       VALUES ($1, $2)`,
+      [secondOrganization.rows[0].id, fixture.userId],
+    );
+
+    await expect(
+      service.login({ email: fixture.email, password }, context),
+    ).rejects.toMatchObject({
+      code: 'AUTH_INVALID_CREDENTIALS',
+      reason: 'organization_required',
+    });
+  });
+
   it('increments failures and locks the account at the configured threshold', async () => {
     const fixture = await createFixture('LOCK');
 

@@ -35,11 +35,12 @@ async function run(): Promise<void> {
     process.loadEnvFile('.env');
   }
 
-  const { AppModule } = await import('../app.module.js');
+  const { BootstrapAdminModule } = await import('./bootstrap-admin.module.js');
 
-  const application = await NestFactory.createApplicationContext(AppModule, {
-    logger: false,
-  });
+  const application = await NestFactory.createApplicationContext(
+    BootstrapAdminModule,
+    { logger: false },
+  );
 
   try {
     const runner = application.get(BootstrapAdminCommandRunner);
