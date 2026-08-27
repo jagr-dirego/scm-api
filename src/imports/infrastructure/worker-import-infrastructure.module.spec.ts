@@ -1,6 +1,7 @@
 import type { INestApplicationContext } from '@nestjs/common';
 import { Test } from '@nestjs/testing';
 import { afterEach, describe, expect, it, vi } from 'vitest';
+import { ImportOutboxDispatcherRunner } from '../application/import-outbox-dispatcher.runner';
 import { ImportOutboxDispatcherService } from '../application/import-outbox-dispatcher.service';
 import {
   IMPORT_QUEUE_PUBLISHER_PORT,
@@ -61,13 +62,20 @@ describe('WorkerImportInfrastructureModule', () => {
     expect(testingModule.get(ImportOutboxDispatcherService)).toBeInstanceOf(
       ImportOutboxDispatcherService,
     );
+    const runner = testingModule.get(ImportOutboxDispatcherRunner);
+    expect(runner).toBeInstanceOf(ImportOutboxDispatcherRunner);
     expect(repository.claimPending).not.toHaveBeenCalled();
     expect(publisher.publish).not.toHaveBeenCalled();
+    const stopRunner = vi.spyOn(runner, 'stop');
 
     await application.close();
     application = undefined;
 
+    expect(stopRunner).toHaveBeenCalledOnce();
     expect(publisher.close).toHaveBeenCalledOnce();
+    expect(stopRunner.mock.invocationCallOrder[0]).toBeLessThan(
+      publisher.close.mock.invocationCallOrder[0],
+    );
   });
 
   it('rejects registration for api role', async () => {

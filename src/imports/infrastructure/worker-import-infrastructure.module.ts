@@ -5,6 +5,7 @@ import {
   parseImportInfrastructureEnvironment,
 } from '../../config/import-infrastructure-environment.schema';
 import { DatabaseModule } from '../../database/database.module';
+import { ImportOutboxDispatcherRunner } from '../application/import-outbox-dispatcher.runner';
 import { ImportOutboxDispatcherService } from '../application/import-outbox-dispatcher.service';
 import { IMPORT_QUEUE_PUBLISHER_PORT } from '../application/ports/import-queue-publisher.port';
 import { IMPORT_OUTBOX_REPOSITORY_PORT } from '../application/ports/import-outbox.repository.port';
@@ -27,9 +28,12 @@ class ImportQueueLifecycle implements OnModuleDestroy {
   constructor(
     @Inject(BullMqImportQueuePublisherAdapter)
     private readonly publisher: BullMqImportQueuePublisherAdapter,
+    @Inject(ImportOutboxDispatcherRunner)
+    private readonly dispatcherRunner: ImportOutboxDispatcherRunner,
   ) {}
 
   async onModuleDestroy(): Promise<void> {
+    await this.dispatcherRunner.stop();
     await this.publisher.close();
   }
 }
@@ -99,6 +103,21 @@ class ImportQueueLifecycle implements OnModuleDestroy {
           { now: () => new Date() },
         ),
     },
+    {
+      provide: ImportOutboxDispatcherRunner,
+      inject: [
+        ImportOutboxDispatcherService,
+        WORKER_IMPORT_INFRASTRUCTURE_ENVIRONMENT,
+      ],
+      useFactory: (
+        dispatcher: ImportOutboxDispatcherService,
+        environment: WorkerImportInfrastructureEnvironment,
+      ) =>
+        new ImportOutboxDispatcherRunner(
+          dispatcher,
+          environment.IMPORT_OUTBOX_POLL_MS,
+        ),
+    },
     ImportQueueLifecycle,
   ],
   exports: [
@@ -106,6 +125,7 @@ class ImportQueueLifecycle implements OnModuleDestroy {
     IMPORT_QUEUE_PUBLISHER_PORT,
     IMPORT_OUTBOX_REPOSITORY_PORT,
     ImportOutboxDispatcherService,
+    ImportOutboxDispatcherRunner,
   ],
 })
 export class WorkerImportInfrastructureModule {}
