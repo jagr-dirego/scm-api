@@ -13,7 +13,8 @@ interface FastifySecurityHeadersHost {
       request: unknown,
       reply: SecurityHeaderReply,
       payload: unknown,
-    ) => unknown,
+      done: (error: Error | null, payload?: unknown) => void,
+    ) => void,
   ): void;
 }
 
@@ -29,8 +30,8 @@ export function configureSecurityHeaders(
     .getHttpAdapter()
     .getInstance() as FastifySecurityHeadersHost;
 
-  fastify.addHook('onSend', (_request, reply, payload) => {
+  fastify.addHook('onSend', (_request, reply, payload, done) => {
     reply.header('Strict-Transport-Security', HSTS_HEADER_VALUE);
-    return payload;
+    done(null, payload);
   });
 }

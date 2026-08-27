@@ -20,16 +20,19 @@ describe('configureSecurityHeaders', () => {
       request: unknown,
       reply: { header: (name: string, value: string) => void },
       payload: unknown,
-    ) => unknown;
+      done: (error: Error | null, payload?: unknown) => void,
+    ) => void;
     const header = vi.fn();
+    const done = vi.fn();
+    const payload = { ok: true };
 
-    expect(hook({}, { header }, { ok: true })).toEqual({
-      ok: true,
-    });
+    hook({}, { header }, payload, done);
+
     expect(header).toHaveBeenCalledWith(
       'Strict-Transport-Security',
       HSTS_HEADER_VALUE,
     );
+    expect(done).toHaveBeenCalledWith(null, payload);
   });
 
   it('does not add HSTS outside production', () => {
