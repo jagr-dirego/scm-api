@@ -1,6 +1,7 @@
 import type { INestApplicationContext } from '@nestjs/common';
 import { Test } from '@nestjs/testing';
 import { afterEach, describe, expect, it, vi } from 'vitest';
+import { ImportOutboxDispatcherService } from '../application/import-outbox-dispatcher.service';
 import {
   IMPORT_QUEUE_PUBLISHER_PORT,
   type ImportQueuePublisherPort,
@@ -57,6 +58,11 @@ describe('WorkerImportInfrastructureModule', () => {
     expect(
       testingModule.get<ImportOutboxRepository>(IMPORT_OUTBOX_REPOSITORY_PORT),
     ).toBe(repository);
+    expect(testingModule.get(ImportOutboxDispatcherService)).toBeInstanceOf(
+      ImportOutboxDispatcherService,
+    );
+    expect(repository.claimPending).not.toHaveBeenCalled();
+    expect(publisher.publish).not.toHaveBeenCalled();
 
     await application.close();
     application = undefined;

@@ -1,9 +1,11 @@
 import { Inject, Injectable, Module, OnModuleDestroy } from '@nestjs/common';
+import { randomUUID } from 'node:crypto';
 import {
   type ImportInfrastructureEnvironment,
   parseImportInfrastructureEnvironment,
 } from '../../config/import-infrastructure-environment.schema';
 import { DatabaseModule } from '../../database/database.module';
+import { ImportOutboxDispatcherService } from '../application/import-outbox-dispatcher.service';
 import { IMPORT_QUEUE_PUBLISHER_PORT } from '../application/ports/import-queue-publisher.port';
 import { IMPORT_OUTBOX_REPOSITORY_PORT } from '../application/ports/import-outbox.repository.port';
 import { ImportInfrastructureModule } from './import-infrastructure.module';
@@ -13,6 +15,7 @@ import { BullMqImportQueuePublisherAdapter } from './queue/bullmq-import-queue-p
 const WORKER_IMPORT_INFRASTRUCTURE_ENVIRONMENT = Symbol(
   'WORKER_IMPORT_INFRASTRUCTURE_ENVIRONMENT',
 );
+const IMPORT_WORKER_INSTANCE_ID = Symbol('IMPORT_WORKER_INSTANCE_ID');
 
 type WorkerImportInfrastructureEnvironment = Extract<
   ImportInfrastructureEnvironment,
@@ -66,12 +69,43 @@ class ImportQueueLifecycle implements OnModuleDestroy {
       provide: IMPORT_OUTBOX_REPOSITORY_PORT,
       useExisting: PostgresImportOutboxRepository,
     },
+    {
+      provide: IMPORT_WORKER_INSTANCE_ID,
+      useFactory: () => `worker-${randomUUID()}`,
+    },
+    {
+      provide: ImportOutboxDispatcherService,
+      inject: [
+        IMPORT_OUTBOX_REPOSITORY_PORT,
+        IMPORT_QUEUE_PUBLISHER_PORT,
+        WORKER_IMPORT_INFRASTRUCTURE_ENVIRONMENT,
+        IMPORT_WORKER_INSTANCE_ID,
+      ],
+      useFactory: (
+        repository: InstanceType<typeof PostgresImportOutboxRepository>,
+        publisher: InstanceType<typeof BullMqImportQueuePublisherAdapter>,
+        environment: WorkerImportInfrastructureEnvironment,
+        workerId: string,
+      ) =>
+        new ImportOutboxDispatcherService(
+          repository,
+          publisher,
+          {
+            workerId,
+            lockMs: environment.IMPORT_OUTBOX_LOCK_MS,
+            batchSize: environment.IMPORT_OUTBOX_BATCH_SIZE,
+            backoffMs: environment.IMPORT_JOB_BACKOFF_MS,
+          },
+          { now: () => new Date() },
+        ),
+    },
     ImportQueueLifecycle,
   ],
   exports: [
     ImportInfrastructureModule,
     IMPORT_QUEUE_PUBLISHER_PORT,
     IMPORT_OUTBOX_REPOSITORY_PORT,
+    ImportOutboxDispatcherService,
   ],
 })
 export class WorkerImportInfrastructureModule {}
