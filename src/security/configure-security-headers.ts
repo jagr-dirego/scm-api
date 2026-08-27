@@ -27,7 +27,7 @@ export function configureSecurityHeaders(
 
   const fastify = app
     .getHttpAdapter()
-    .getInstance<FastifySecurityHeadersHost>();
+    .getInstance() as FastifySecurityHeadersHost;
 
   fastify.addHook('onSend', async (_request, reply, payload) => {
     reply.header('Strict-Transport-Security', HSTS_HEADER_VALUE);
