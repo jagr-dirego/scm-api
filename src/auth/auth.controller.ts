@@ -57,6 +57,7 @@ export class AuthController {
   ) {}
 
   @Post('login')
+  @HttpCode(200)
   @ApiOperation({ summary: 'Autenticar y crear una sesion' })
   @ApiBody({
     schema: {

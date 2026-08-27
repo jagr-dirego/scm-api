@@ -8,6 +8,7 @@ import {
 } from './observability/application-logger';
 import { createFastifyAdapter } from './observability/fastify-adapter';
 import { configureOpenApi } from './openapi/configure-openapi';
+import { configureSecurityHeaders } from './security/configure-security-headers';
 
 async function bootstrap() {
   const app = await NestFactory.create<NestFastifyApplication>(
@@ -23,6 +24,7 @@ async function bootstrap() {
     credentials: true,
   });
 
+  configureSecurityHeaders(app, appConfig.nodeEnv);
   configureOpenApi(app, appConfig.openApiEnabled);
 
   await app.listen(appConfig.port, '0.0.0.0');

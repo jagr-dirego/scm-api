@@ -3,6 +3,7 @@ import {
   ForbiddenException,
   UnauthorizedException,
 } from '@nestjs/common';
+import { HTTP_CODE_METADATA } from '@nestjs/common/constants';
 import { describe, expect, it, vi } from 'vitest';
 import { ZodError } from 'zod';
 import type { AuthHttpService } from './auth-http.service';
@@ -76,6 +77,12 @@ const createController = (
 };
 
 describe('AuthController', () => {
+  it('declares the login success response as HTTP 200', () => {
+    expect(
+      Reflect.getMetadata(HTTP_CODE_METADATA, AuthController.prototype.login),
+    ).toBe(200);
+  });
+
   it.each<AuthenticationFailureReason>([
     'invalid_credentials',
     'account_inactive',
