@@ -9,10 +9,15 @@ import { PermissionsGuard } from './permissions.guard';
 import { AuthenticatedContextRepository } from './authenticated-context.repository';
 import { AuthenticatedContextService } from './authenticated-context.service';
 import { AuthenticatedContextController } from './authenticated-context.controller';
+import { ImportProfilesController } from './import-profiles.controller';
 
 @Module({
   imports: [AuthModule],
-  controllers: [ImportAuthorizationController, AuthenticatedContextController],
+  controllers: [
+    ImportAuthorizationController,
+    ImportProfilesController,
+    AuthenticatedContextController,
+  ],
   providers: [
     AuthorizationRepository,
     AuthorizationService,

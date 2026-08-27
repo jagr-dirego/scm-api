@@ -17,7 +17,7 @@ const input = {
 };
 
 const createService = () => {
-  const repository = { resolve: vi.fn() };
+  const repository = { resolve: vi.fn(), listAuthorized: vi.fn() };
   return {
     repository,
     service: new ImportAuthorizationService(
@@ -81,5 +81,38 @@ describe('ImportAuthorizationService', () => {
     fixture.repository.resolve.mockResolvedValue(decision);
 
     await expect(fixture.service.authorize(input)).resolves.toEqual(decision);
+  });
+
+  it('normalizes optional filters before listing profiles', async () => {
+    const fixture = createService();
+    fixture.repository.listAuthorized.mockResolvedValue([]);
+
+    await expect(
+      fixture.service.listAuthorized({
+        identity: input.identity,
+        actionPermissionCode: ' imports.upload ',
+        documentTypeCode: ' stock ',
+        fileBranchCode: ' general ',
+      }),
+    ).resolves.toEqual([]);
+    expect(fixture.repository.listAuthorized).toHaveBeenCalledWith({
+      identity: input.identity,
+      actionPermissionCode: 'imports.upload',
+      documentTypeCode: 'stock',
+      fileBranchCode: 'general',
+    });
+  });
+
+  it('rejects invalid list filters without querying PostgreSQL', async () => {
+    const fixture = createService();
+
+    await expect(
+      fixture.service.listAuthorized({
+        identity: input.identity,
+        actionPermissionCode: 'imports.upload',
+        documentTypeCode: 'traslado-sale',
+      }),
+    ).resolves.toBeNull();
+    expect(fixture.repository.listAuthorized).not.toHaveBeenCalled();
   });
 });

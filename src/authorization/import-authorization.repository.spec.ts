@@ -79,4 +79,69 @@ describe('ImportAuthorizationRepository', () => {
     expect(sql).not.toContain('imports.type.');
     expect(sql).not.toContain('imports.branch.');
   });
+
+  it('lists authorized profiles with optional filters in one query', async () => {
+    const pool = {
+      query: vi.fn().mockResolvedValue({
+        rows: [
+          {
+            profile_code: 'stock_general',
+            profile_name: 'Stock - General',
+            document_type_code: 'stock',
+            document_type_name: 'Stock',
+            file_branch_code: 'general',
+            file_branch_name: 'General',
+          },
+        ],
+      }),
+    };
+    const repository = new ImportAuthorizationRepository(
+      pool as unknown as Pool,
+    );
+
+    await expect(
+      repository.listAuthorized({
+        identity: input.identity,
+        actionPermissionCode: 'imports.upload',
+        documentTypeCode: 'stock',
+      }),
+    ).resolves.toEqual([
+      {
+        code: 'stock_general',
+        name: 'Stock - General',
+        documentType: { code: 'stock', name: 'Stock' },
+        fileBranch: { code: 'general', name: 'General' },
+      },
+    ]);
+    expect(pool.query).toHaveBeenCalledTimes(1);
+    expect(pool.query).toHaveBeenCalledWith(expect.any(String), [
+      input.identity.userId,
+      input.identity.organizationId,
+      'imports.upload',
+      'stock',
+      null,
+    ]);
+  });
+
+  it('keeps role dimensions together, deny overrides and deterministic order', async () => {
+    const pool = { query: vi.fn().mockResolvedValue({ rows: [] }) };
+    const repository = new ImportAuthorizationRepository(
+      pool as unknown as Pool,
+    );
+
+    await repository.listAuthorized({
+      identity: input.identity,
+      actionPermissionCode: 'imports.upload',
+    });
+
+    const sql = pool.query.mock.calls[0]?.[0] as string;
+    expect(sql).toContain('evaluated.action_override = false');
+    expect(sql).toContain('assignment.role_id');
+    expect(sql).toContain('role_permission.role_id = assignment.role_id');
+    expect(sql).toContain('type_permission.role_id = assignment.role_id');
+    expect(sql).toContain('branch_permission.role_id = assignment.role_id');
+    expect(sql).toContain(
+      'ORDER BY evaluated.sort_order, evaluated.profile_code',
+    );
+  });
 });

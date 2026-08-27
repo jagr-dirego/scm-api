@@ -211,6 +211,21 @@ describe.sequential('ImportAuthorizationService PostgreSQL integration', () => {
       profile: { code: 'stock_general' },
     });
     await expect(
+      service.listAuthorized({
+        identity: fixture.input.identity,
+        actionPermissionCode: 'imports.upload',
+        documentTypeCode: 'stock',
+        fileBranchCode: 'general',
+      }),
+    ).resolves.toEqual([
+      {
+        code: 'stock_general',
+        name: 'Stock - General',
+        documentType: { code: 'stock', name: 'Stock' },
+        fileBranch: { code: 'general', name: 'General' },
+      },
+    ]);
+    await expect(
       permissionService.isAllowed(
         {
           identity: fixture.input.identity,
@@ -238,6 +253,12 @@ describe.sequential('ImportAuthorizationService PostgreSQL integration', () => {
       allowed: false,
       profile: { code: 'stock_general' },
     });
+    await expect(
+      service.listAuthorized({
+        identity: fixture.input.identity,
+        actionPermissionCode: 'imports.upload',
+      }),
+    ).resolves.toEqual([]);
   });
 
   it('applies an explicit deny override before a complete role grant', async () => {
@@ -258,6 +279,12 @@ describe.sequential('ImportAuthorizationService PostgreSQL integration', () => {
     await expect(service.authorize(fixture.input)).resolves.toMatchObject({
       allowed: false,
     });
+    await expect(
+      service.listAuthorized({
+        identity: fixture.input.identity,
+        actionPermissionCode: 'imports.upload',
+      }),
+    ).resolves.toEqual([]);
     await expect(
       permissionService.isAllowed(
         {
@@ -288,6 +315,14 @@ describe.sequential('ImportAuthorizationService PostgreSQL integration', () => {
       allowed: true,
       profile: { code: 'stock_general' },
     });
+    await expect(
+      service.listAuthorized({
+        identity: fixture.input.identity,
+        actionPermissionCode: 'imports.upload',
+        documentTypeCode: 'stock',
+        fileBranchCode: 'general',
+      }),
+    ).resolves.toHaveLength(1);
   });
 
   it('does not use role grants from another active organization', async () => {
@@ -312,6 +347,12 @@ describe.sequential('ImportAuthorizationService PostgreSQL integration', () => {
       allowed: false,
       profile: { code: 'stock_general' },
     });
+    await expect(
+      service.listAuthorized({
+        identity: fixture.input.identity,
+        actionPermissionCode: 'imports.upload',
+      }),
+    ).resolves.toEqual([]);
     await expect(
       permissionService.isAllowed(
         {

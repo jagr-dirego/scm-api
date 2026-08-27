@@ -21,3 +21,23 @@ export interface ImportAuthorizationDecision {
   allowed: boolean;
   profile: AuthorizedImportProfile | null;
 }
+
+export interface AuthorizedImportProfileListInput {
+  identity: VerifiedAccessToken;
+  actionPermissionCode: string;
+  documentTypeCode?: string;
+  fileBranchCode?: string;
+}
+
+export interface ImportProfileSummary {
+  code: string;
+  name: string;
+  documentType: {
+    code: string;
+    name: string;
+  };
+  fileBranch: {
+    code: string;
+    name: string;
+  };
+}

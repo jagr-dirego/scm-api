@@ -28,6 +28,7 @@ export class ImportAuthorizationController {
   @RequirePermissions(['imports.upload'])
   @ApiOperation({
     summary: 'Validar acceso de carga y resolver el perfil de importacion',
+    deprecated: true,
   })
   @ApiParam({ name: 'documentTypeCode', example: 'stock' })
   @ApiParam({ name: 'fileBranchCode', example: 'general' })
