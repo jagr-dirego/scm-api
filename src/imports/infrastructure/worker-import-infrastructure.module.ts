@@ -3,8 +3,11 @@ import {
   type ImportInfrastructureEnvironment,
   parseImportInfrastructureEnvironment,
 } from '../../config/import-infrastructure-environment.schema';
+import { DatabaseModule } from '../../database/database.module';
 import { IMPORT_QUEUE_PUBLISHER_PORT } from '../application/ports/import-queue-publisher.port';
+import { IMPORT_OUTBOX_REPOSITORY_PORT } from '../application/ports/import-outbox.repository.port';
 import { ImportInfrastructureModule } from './import-infrastructure.module';
+import { PostgresImportOutboxRepository } from './outbox/postgres-import-outbox.repository';
 import { BullMqImportQueuePublisherAdapter } from './queue/bullmq-import-queue-publisher.adapter';
 
 const WORKER_IMPORT_INFRASTRUCTURE_ENVIRONMENT = Symbol(
@@ -29,7 +32,7 @@ class ImportQueueLifecycle implements OnModuleDestroy {
 }
 
 @Module({
-  imports: [ImportInfrastructureModule],
+  imports: [DatabaseModule, ImportInfrastructureModule],
   providers: [
     {
       provide: WORKER_IMPORT_INFRASTRUCTURE_ENVIRONMENT,
@@ -58,8 +61,17 @@ class ImportQueueLifecycle implements OnModuleDestroy {
       provide: IMPORT_QUEUE_PUBLISHER_PORT,
       useExisting: BullMqImportQueuePublisherAdapter,
     },
+    PostgresImportOutboxRepository,
+    {
+      provide: IMPORT_OUTBOX_REPOSITORY_PORT,
+      useExisting: PostgresImportOutboxRepository,
+    },
     ImportQueueLifecycle,
   ],
-  exports: [ImportInfrastructureModule, IMPORT_QUEUE_PUBLISHER_PORT],
+  exports: [
+    ImportInfrastructureModule,
+    IMPORT_QUEUE_PUBLISHER_PORT,
+    IMPORT_OUTBOX_REPOSITORY_PORT,
+  ],
 })
 export class WorkerImportInfrastructureModule {}

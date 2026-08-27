@@ -5,8 +5,18 @@ import {
   IMPORT_QUEUE_PUBLISHER_PORT,
   type ImportQueuePublisherPort,
 } from '../application/ports/import-queue-publisher.port';
+import {
+  IMPORT_OUTBOX_REPOSITORY_PORT,
+  type ImportOutboxRepository,
+} from '../application/ports/import-outbox.repository.port';
+import { PostgresImportOutboxRepository } from './outbox/postgres-import-outbox.repository';
 import { BullMqImportQueuePublisherAdapter } from './queue/bullmq-import-queue-publisher.adapter';
 import { WorkerImportInfrastructureModule } from './worker-import-infrastructure.module';
+
+vi.hoisted(() => {
+  process.env.DATABASE_URL ??=
+    'postgresql://scm_test:scm_test_password@127.0.0.1:15433/scm_test';
+});
 
 const originalEnvironment = { ...process.env };
 
@@ -26,17 +36,27 @@ describe('WorkerImportInfrastructureModule', () => {
       publish: vi.fn<ImportQueuePublisherPort['publish']>(),
       close: vi.fn<() => Promise<void>>().mockResolvedValue(undefined),
     };
+    const repository = {
+      claimPending: vi.fn<ImportOutboxRepository['claimPending']>(),
+      markPublished: vi.fn<ImportOutboxRepository['markPublished']>(),
+      reschedule: vi.fn<ImportOutboxRepository['reschedule']>(),
+    };
     const testingModule = await Test.createTestingModule({
       imports: [WorkerImportInfrastructureModule],
     })
       .overrideProvider(BullMqImportQueuePublisherAdapter)
       .useValue(publisher)
+      .overrideProvider(PostgresImportOutboxRepository)
+      .useValue(repository)
       .compile();
     application = testingModule;
 
     expect(
       testingModule.get<ImportQueuePublisherPort>(IMPORT_QUEUE_PUBLISHER_PORT),
     ).toBe(publisher);
+    expect(
+      testingModule.get<ImportOutboxRepository>(IMPORT_OUTBOX_REPOSITORY_PORT),
+    ).toBe(repository);
 
     await application.close();
     application = undefined;
@@ -55,6 +75,12 @@ describe('WorkerImportInfrastructureModule', () => {
       })
         .overrideProvider(BullMqImportQueuePublisherAdapter)
         .useValue({ publish: vi.fn(), close: vi.fn() })
+        .overrideProvider(PostgresImportOutboxRepository)
+        .useValue({
+          claimPending: vi.fn(),
+          markPublished: vi.fn(),
+          reschedule: vi.fn(),
+        })
         .compile(),
     ).rejects.toThrow(
       'Worker import infrastructure requires SCM_PROCESS_ROLE=worker',
