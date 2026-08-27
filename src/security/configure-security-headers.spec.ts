@@ -5,7 +5,7 @@ import {
 } from './configure-security-headers';
 
 describe('configureSecurityHeaders', () => {
-  it('adds HSTS to production responses', async () => {
+  it('adds HSTS to production responses', () => {
     const addHook = vi.fn();
     const app = {
       getHttpAdapter: () => ({

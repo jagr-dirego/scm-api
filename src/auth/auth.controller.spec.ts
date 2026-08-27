@@ -83,9 +83,7 @@ describe('AuthController', () => {
       'login',
     )?.value as AuthController['login'];
 
-    expect(
-      Reflect.getMetadata(HTTP_CODE_METADATA, loginHandler),
-    ).toBe(200);
+    expect(Reflect.getMetadata(HTTP_CODE_METADATA, loginHandler)).toBe(200);
   });
 
   it.each<AuthenticationFailureReason>([
