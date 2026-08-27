@@ -78,8 +78,13 @@ const createController = (
 
 describe('AuthController', () => {
   it('declares the login success response as HTTP 200', () => {
+    const loginHandler = Object.getOwnPropertyDescriptor(
+      AuthController.prototype,
+      'login',
+    )?.value as AuthController['login'];
+
     expect(
-      Reflect.getMetadata(HTTP_CODE_METADATA, AuthController.prototype.login),
+      Reflect.getMetadata(HTTP_CODE_METADATA, loginHandler),
     ).toBe(200);
   });
 

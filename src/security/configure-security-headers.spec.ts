@@ -20,10 +20,10 @@ describe('configureSecurityHeaders', () => {
       request: unknown,
       reply: { header: (name: string, value: string) => void },
       payload: unknown,
-    ) => Promise<unknown>;
+    ) => unknown;
     const header = vi.fn();
 
-    await expect(hook({}, { header }, { ok: true })).resolves.toEqual({
+    expect(hook({}, { header }, { ok: true })).toEqual({
       ok: true,
     });
     expect(header).toHaveBeenCalledWith(
