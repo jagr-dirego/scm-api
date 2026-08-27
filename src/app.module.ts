@@ -6,6 +6,7 @@ import { AuthorizationModule } from './authorization/authorization.module';
 import { BootstrapAdminModule } from './bootstrap-admin/bootstrap-admin.module';
 import { DatabaseModule } from './database/database.module';
 import { HealthModule } from './health/health.module';
+import { ImportInfrastructureModule } from './imports/infrastructure/import-infrastructure.module';
 import { AuditModule } from './observability/audit.module';
 import { ObservabilityModule } from './observability/observability.module';
 
@@ -16,6 +17,7 @@ import { ObservabilityModule } from './observability/observability.module';
     BootstrapAdminModule,
     DatabaseModule,
     HealthModule,
+    ImportInfrastructureModule,
     ObservabilityModule,
     AuditModule,
   ],
