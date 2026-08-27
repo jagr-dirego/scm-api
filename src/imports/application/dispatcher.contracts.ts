@@ -7,11 +7,18 @@ export type ImportQueueJob = Readonly<{
   batchId: string;
 }>;
 
+export class UnsupportedImportOutboxEventError extends Error {
+  constructor() {
+    super('Unsupported import outbox event type');
+    this.name = 'UnsupportedImportOutboxEventError';
+  }
+}
+
 export function createImportQueueJob(
   event: ClaimedImportOutboxEvent,
 ): ImportQueueJob {
   if (event.eventType !== IMPORT_BATCH_QUEUED_EVENT) {
-    throw new Error('Unsupported import outbox event type');
+    throw new UnsupportedImportOutboxEventError();
   }
 
   return Object.freeze({
